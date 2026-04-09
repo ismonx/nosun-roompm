@@ -271,7 +271,7 @@ const RoomBookingFrontEnd = () => {
                     >
                       <div className="flex justify-between items-start">
                         <div>
-                          <h3 className="text-2xl font-black mb-1">{room.name[lang]}</h3>
+                          <h2 className="text-2xl font-black mb-1">{room.name[lang]}</h2>
                           <p className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-2 ${isSelected ? 'text-hostel-bg/60' : 'opacity-40'}`}>
                             <Users size={12}/> {room.standardCapacity} {t('standard')}
                           </p>
