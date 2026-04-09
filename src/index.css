@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .shadow-glow {
+    box-shadow: 0 0 20px rgba(169, 175, 144, 0.2);
+  }
+}
+
+:root {
+  background-color: #202e32;
+  color: #dfdcb9;
+}
+
+body {
+  margin: 0;
+  display: block; /* 改回 block 以利捲動 */
+  min-width: 320px;
+  min-height: 100vh;
+  font-family: 'Noto Sans TC', sans-serif;
+  background-color: #202e32;
+}
+
+#root {
+  width: 100%;
+}
+
+/* Custom Scrollbar for 2012 Mac Pro compat */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #202e32;
+}
+::-webkit-scrollbar-thumb {
+  background: #586c5c;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #85937a;
+}
