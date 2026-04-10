@@ -6,6 +6,12 @@ const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
   const [lang, setLang] = useState(localStorage.getItem('fu_lang') || 'zh');
+  const [isDark, setIsDark] = useState(() => {
+    const saved = localStorage.getItem('fu_dark');
+    if (saved !== null) return saved === 'true';
+    // 預設使用系統偏好
+    return window.matchMedia?.('(prefers-color-scheme: dark)').matches || false;
+  });
   
   // 阿芝規範：核心設定與數據結構 (V5.0 Logic)
   const [settings, setSettings] = useState({
@@ -51,6 +57,20 @@ export const AppProvider = ({ children }) => {
   });
 
   const [bookings, setBookings] = useState({});
+
+  // 日夜切換 - 綁定 HTML class
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('fu_dark', String(isDark));
+  }, [isDark]);
+
+  const toggleDark = useCallback(() => {
+    setIsDark(prev => !prev);
+  }, []);
 
   // 1. 同步全域設定 (settings)
   useEffect(() => {
@@ -113,14 +133,14 @@ export const AppProvider = ({ children }) => {
         step3: "客資蒐集", step4: "鎖房成功", guest: "位", extra: "加人費", total: "預估總額",
         name: "姓名", phone: "手機", note: "備註", bookingBtn: "LINE 預訂與鎖房",
         standard: "標準入住", available: "可預訂", fullyBooked: "該日客滿",
-        partnerInfo: "夥伴推薦", back: "返回"
+        partnerInfo: "夥伴推薦", back: "返回", nights: "晚"
       },
       en: { 
         checkIn: "Check-in", checkOut: "Check-out", step1: "Date & Referral", step2: "Room & Guests", 
         step3: "Information", step4: "Locked!", guest: "Guests", extra: "Extra Fee", total: "Total",
         name: "Name", phone: "Phone", note: "Note", bookingBtn: "LINE Book & Lock",
         standard: "Standard", available: "Available", fullyBooked: "Sold Out",
-        partnerInfo: "Partner Recommendation", back: "Back"
+        partnerInfo: "Partner Recommendation", back: "Back", nights: "Nights"
       }
     };
     return dict[lang][key] || key;
@@ -134,8 +154,8 @@ export const AppProvider = ({ children }) => {
   };
 
   const value = useMemo(() => ({
-    lang, setLang, t, settings, bookings, getSmartPrice, updateSettings
-  }), [lang, settings, bookings, getSmartPrice, t]);
+    lang, setLang, t, settings, bookings, getSmartPrice, updateSettings, isDark, toggleDark
+  }), [lang, settings, bookings, getSmartPrice, t, isDark, toggleDark]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };

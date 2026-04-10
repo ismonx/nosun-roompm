@@ -4,39 +4,75 @@
 
 @layer utilities {
   .shadow-glow {
-    box-shadow: 0 0 20px rgba(169, 175, 144, 0.2);
+    box-shadow: 0 0 24px rgba(138, 154, 91, 0.15);
+  }
+  .shadow-glow-sm {
+    box-shadow: 0 0 12px rgba(138, 154, 91, 0.1);
+  }
+  .text-shadow-glow {
+    text-shadow: 0 0 30px rgba(138, 154, 91, 0.15);
   }
 }
 
+/* ===== 文青森林系 Light Mode ===== */
 :root {
-  background-color: #202e32;
-  color: #dfdcb9;
+  --bg: #F4F1EA;
+  --text: #2C3632;
+  --moss: #8A9A5B;
+  --olive: #6B7A4A;
+  --forest: #4A5A3A;
+  background-color: var(--bg);
+  color: var(--text);
+}
+
+/* ===== 文青森林系 Dark Mode ===== */
+html.dark {
+  --bg: #1B2420;
+  --text: #D1D7C4;
+  --moss: #C2D5A8;
+  --olive: #8A9A6B;
+  --forest: #3A4A3A;
+  background-color: var(--bg);
+  color: var(--text);
+}
+
+/* ===== 日夜切換漸變動畫 (像天色漸暗一樣滑順) ===== */
+html, body, #root,
+html * {
+  transition: background-color 500ms ease, color 500ms ease, border-color 500ms ease, box-shadow 500ms ease;
 }
 
 body {
   margin: 0;
-  display: block; /* 改回 block 以利捲動 */
+  display: block;
   min-width: 320px;
   min-height: 100vh;
   font-family: 'Noto Sans TC', sans-serif;
-  background-color: #202e32;
+  background-color: var(--bg);
+  color: var(--text);
 }
 
 #root {
   width: 100%;
 }
 
-/* Custom Scrollbar for 2012 Mac Pro compat */
+/* ===== 文藝層次 - 標題使用襯線字體 ===== */
+h1, h2, h3 {
+  font-family: 'Noto Serif TC', 'Songti SC', 'STSong', serif;
+}
+
+/* ===== Custom Scrollbar (文青色系) ===== */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #202e32;
+  background: var(--bg);
 }
 ::-webkit-scrollbar-thumb {
-  background: #586c5c;
-  border-radius: 4px;
+  background: var(--moss);
+  border-radius: 3px;
+  opacity: 0.5;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #85937a;
+  background: var(--olive);
 }
