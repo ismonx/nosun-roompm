@@ -8,29 +8,35 @@ export default {
   theme: {
     extend: {
       colors: {
-        hostel: {
-          // Light 模式 (文青森林系)
-          bg: '#F4F1EA',
-          text: '#2C3632',
-          moss: '#8A9A5B',
-          olive: '#6B7A4A',
-          forest: '#4A5A3A',
-          sand: '#2C3632',
-          // Dark 模式
-          'dark-bg': '#1B2420',
-          'dark-text': '#D1D7C4',
-          'dark-moss': '#C2D5A8',
-          'dark-olive': '#8A9A6B',
-          'dark-forest': '#3A4A3A',
+        pms: {
+          bg: 'var(--pms-bg)',
+          'bg-card': 'var(--pms-bg-card)',
+          text: 'var(--pms-text)',
+          'text-muted': 'var(--pms-text-muted)',
+          accent: 'var(--pms-accent)',
+          'accent-hover': 'var(--pms-accent-hover)',
+          border: 'var(--pms-border)',
+          'border-light': 'var(--pms-border-light)',
+        },
+        status: {
+          pending: '#EAB308',
+          deposit: '#3B82F6',
+          full: '#16A34A',
+          closed: '#6B7280',
         }
       },
       fontFamily: {
-        sans: ['"Noto Sans TC"', 'sans-serif'],
-        serif: ['"Noto Serif TC"', '"Songti SC"', '"STSong"', 'serif'],
+        heading: 'var(--pms-font-heading)',
+        body: 'var(--pms-font-body)',
       },
-      transitionDuration: {
-        '500': '500ms',
-      }
+      borderRadius: {
+        'pms': '6px',
+      },
+      spacing: {
+        'pms-gap': 'var(--pms-gap)',
+        'pms-pad': 'var(--pms-padding)',
+        'pms-cell': 'var(--pms-cell-h)',
+      },
     },
   },
   plugins: [],

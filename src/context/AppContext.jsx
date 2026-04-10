@@ -1,161 +1,300 @@
 import React, { useState, useEffect, createContext, useContext, useMemo, useCallback } from 'react';
 import { db } from '../firebase';
-import { doc, onSnapshot, updateDoc, setDoc, collection, query, orderBy } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, setDoc, deleteDoc, collection, query, getDocs, addDoc } from 'firebase/firestore';
+import { applyTheme, THEMES } from '../themes';
 
 const AppContext = createContext();
+
+// ===== 預設資料 (首次建庫用) =====
+const DEFAULT_SETTINGS = {
+  vendor_id: 'ismonx_primary',
+  hostel_name: '防曬不要擦太多民宿',
+  home_title_zh: '防曬不要擦太多',
+  home_title_en: 'Back to Natural Rhythm',
+  home_subtitle_zh: '2026 恆春半島最溫暖的預訂門戶',
+  home_subtitle_en: 'Travel Gateway 2026',
+  active_theme: 'forest',
+  density: 'compact',
+  referral_switch: true,
+  referral_msg_zh: '當天已滿房，推薦您參考這間優質同業：[夥伴名稱/連結]',
+  referral_msg_en: 'Fully booked! We recommend our partner: [Partner Name/Link]',
+  line_oa_id: '@nosun_happy',
+  admin_password: '2026',
+};
+
+const DEFAULT_ROOMS = [
+  {
+    id: 'sun',
+    name_zh: '山海二人房',
+    name_en: 'Mountain Sea',
+    category: 'double',
+    photos: [],
+    standard_capacity: 2,
+    max_capacity: 3,
+    extra_guest_fee: 500,
+    base_price: 2800,
+    sort_order: 0,
+  },
+  {
+    id: 'moon',
+    name_zh: '星空四人房',
+    name_en: 'Starry Quad',
+    category: 'quad',
+    photos: [],
+    standard_capacity: 4,
+    max_capacity: 6,
+    extra_guest_fee: 500,
+    base_price: 4200,
+    sort_order: 1,
+  },
+];
 
 export const AppProvider = ({ children }) => {
   const [lang, setLang] = useState(localStorage.getItem('fu_lang') || 'zh');
   const [isDark, setIsDark] = useState(() => {
     const saved = localStorage.getItem('fu_dark');
     if (saved !== null) return saved === 'true';
-    // 預設使用系統偏好
     return window.matchMedia?.('(prefers-color-scheme: dark)').matches || false;
   });
-  
-  // 阿芝規範：核心設定與數據結構 (V5.0 Logic)
-  const [settings, setSettings] = useState({
-    hostelName: "防曬不要擦太多民宿",
-    heroTitle: "防曬不要擦太多", // 校準欄位
-    extraGuestPrice: 500,        // 校準欄位
-    referralSwitch: true,
-    referralMsg: {
-      zh: "當天已滿房，推薦您參考這間優質同業：[夥伴名稱/連結]",
-      en: "Fully booked! We recommend our partner: [Partner Name/Link]"
-    },
-    hero: {
-      zh: { title: "防曬不要擦太多", subtitle: "2026 恆春半島最溫暖的預訂門戶" },
-      en: { title: "Back to Natural Rhythm", subtitle: "Travel Gateway 2026" }
-    },
-    rooms: [
-      { 
-        id: 'sun', 
-        name: { zh: '山海二人房', en: 'Mountain Sea' }, 
-        standardCapacity: 2, 
-        maxCapacity: 3, 
-        extraGuestFee: 500,
-        pricing: { offWeekday: 2800, offWeekend: 3500, offHoliday: 5200, peakWeekday: 3800, peakWeekend: 4500, peakHoliday: 6200 }
-      },
-      { 
-        id: 'moon', 
-        name: { zh: '星空四人房', en: 'Starry Quad' }, 
-        standardCapacity: 4, 
-        maxCapacity: 6,
-        extraGuestFee: 500,
-        pricing: { offWeekday: 4200, offWeekend: 5500, offHoliday: 7800, peakWeekday: 5200, peakWeekend: 6500, peakHoliday: 8800 }
-      },
-    ],
-    peakMonths: [7, 8],
-    holidays: [
-      '2026-01-01', '2026-02-16', '2026-02-17', '2026-02-18', '2026-02-19', '2026-02-20', '2026-02-21', '2026-02-22',
-      '2026-02-28', '2026-04-03', '2026-04-04', '2026-04-05', '2026-06-19', '2026-06-20', '2026-06-21',
-      '2026-09-25', '2026-09-26', '2026-09-27', '2026-10-10'
-    ],
-    openIntervals: [
-      { startDate: '2026-04-01', endDate: '2026-12-31', roomId: 'all' }
-    ],
-  });
 
+  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
+  const [rooms, setRooms] = useState([]);
+  const [pricingRules, setPricingRules] = useState([]);
   const [bookings, setBookings] = useState({});
 
-  // 日夜切換 - 綁定 HTML class
+  // ===== 主題引擎 =====
   useEffect(() => {
+    applyTheme(settings.active_theme || 'forest', isDark);
     if (isDark) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
     localStorage.setItem('fu_dark', String(isDark));
-  }, [isDark]);
+  }, [isDark, settings.active_theme]);
 
-  const toggleDark = useCallback(() => {
-    setIsDark(prev => !prev);
-  }, []);
+  const toggleDark = useCallback(() => setIsDark(prev => !prev), []);
 
-  // 1. 同步全域設定 (settings)
+  // ===== 1. Sync global_settings =====
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, "global", "settings"), (snap) => {
+    const unsub = onSnapshot(doc(db, 'config', 'global_settings'), (snap) => {
       if (snap.exists()) {
         setSettings(prev => ({ ...prev, ...snap.data() }));
       } else {
-        setDoc(doc(db, "global", "settings"), settings);
+        setDoc(doc(db, 'config', 'global_settings'), DEFAULT_SETTINGS);
       }
     });
     return () => unsub();
   }, []);
 
-  // 2. 同步預訂資料 (bookings) - 標記為 /bookings/
+  // ===== 2. Sync rooms collection =====
   useEffect(() => {
-    const q = query(collection(db, "bookings"));
-    const unsub = onSnapshot(q, (snap) => {
+    const unsub = onSnapshot(collection(db, 'rooms'), (snap) => {
+      const data = [];
+      snap.forEach(d => data.push({ id: d.id, ...d.data() }));
+      if (data.length === 0) {
+        // 首次建庫：寫入預設房型
+        DEFAULT_ROOMS.forEach(room => {
+          const { id, ...roomData } = room;
+          setDoc(doc(db, 'rooms', id), roomData);
+        });
+        setRooms(DEFAULT_ROOMS);
+      } else {
+        data.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+        setRooms(data);
+      }
+    });
+    return () => unsub();
+  }, []);
+
+  // ===== 3. Sync pricing_rules collection =====
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'pricing_rules'), (snap) => {
+      const data = [];
+      snap.forEach(d => data.push({ id: d.id, ...d.data() }));
+      setPricingRules(data);
+    });
+    return () => unsub();
+  }, []);
+
+  // ===== 4. Sync bookings collection =====
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'bookings'), (snap) => {
       const data = {};
-      snap.forEach(d => { data[d.id] = d.data(); });
+      snap.forEach(d => { data[d.id] = { id: d.id, ...d.data() }; });
       setBookings(data);
     });
     return () => unsub();
   }, []);
 
-  // 3. 語系持久化
+  // ===== 5. 語系持久化 =====
   useEffect(() => {
     localStorage.setItem('fu_lang', lang);
   }, [lang]);
 
-  // 4. 定價計算公式 (Logic-First)
-  const getSmartPrice = useCallback((roomId, date) => {
-    if (!date || !roomId) return 0;
-    const room = settings.rooms.find(r => r.id === roomId);
-    if (!room) return 0;
-    
-    const d = new Date(date);
-    const dateStr = d.toISOString().split('T')[0];
-    const isPeak = settings.peakMonths.includes(d.getMonth() + 1);
-    const isHoliday = settings.holidays.includes(dateStr);
-    const isWeekend = d.getDay() === 6 || d.getDay() === 5; // 五六算週末
+  // ===== 三級定價引擎 =====
+  // Priority: pricing_rules.promo_price > pricing_rules.price > room.promo_price > rooms.base_price
+  const getSmartPrice = useCallback((roomId, dateStr) => {
+    if (!dateStr || !roomId) return 0;
 
-    const p = room.pricing;
-    const extraPrice = settings.extraGuestPrice || 500; // 使用校準價格
-    if (isPeak) {
-      if (isHoliday) return p.peakHoliday;
-      if (isWeekend) return p.peakWeekend;
-      return p.peakWeekday;
-    } else {
-      if (isHoliday) return p.offHoliday;
-      if (isWeekend) return p.offWeekend;
-      return p.offWeekday;
+    // 尋找符合的定價規則（最具體的優先：指定房型 > all）
+    const matchingRules = pricingRules.filter(rule =>
+      (rule.room_id === roomId || rule.room_id === 'all') &&
+      dateStr >= rule.start_date && dateStr <= rule.end_date
+    );
+
+    const specificRule = matchingRules.find(r => r.room_id === roomId);
+    const generalRule = matchingRules.find(r => r.room_id === 'all');
+    const activeRule = specificRule || generalRule;
+
+    if (activeRule) {
+      // 優先級 1: pricing_rules.promo_price
+      if (activeRule.promo_price && activeRule.promo_price > 0) {
+        return activeRule.promo_price;
+      }
+      // 優先級 2: pricing_rules.price
+      if (activeRule.price && activeRule.price > 0) {
+        return activeRule.price;
+      }
     }
-  }, [settings]);
 
-  // 5. 翻譯 Hook (Manual useTranslation)
+    // 優先級 3: room.promo_price (房型層級優惠價)
+    const room = rooms.find(r => r.id === roomId);
+    if (room?.promo_price && room.promo_price > 0) {
+      return room.promo_price;
+    }
+
+    // 優先級 4: rooms.base_price
+    return room?.base_price || 0;
+  }, [rooms, pricingRules]);
+
+  // 取得促銷資訊 (前端顯示刪除線用)
+  const getPromoInfo = useCallback((roomId, dateStr) => {
+    if (!dateStr || !roomId) return { hasPromo: false, originalPrice: 0, promoPrice: 0 };
+
+    // 先檢查 pricing_rules 層級的 promo
+    const matchingRules = pricingRules.filter(rule =>
+      (rule.room_id === roomId || rule.room_id === 'all') &&
+      dateStr >= rule.start_date && dateStr <= rule.end_date
+    );
+    const specificRule = matchingRules.find(r => r.room_id === roomId);
+    const generalRule = matchingRules.find(r => r.room_id === 'all');
+    const activeRule = specificRule || generalRule;
+
+    if (activeRule && activeRule.promo_price && activeRule.promo_price > 0) {
+      const originalPrice = activeRule.price || (rooms.find(r => r.id === roomId)?.base_price || 0);
+      return { hasPromo: true, originalPrice, promoPrice: activeRule.promo_price };
+    }
+
+    // 再檢查房型層級的 promo_price
+    const room = rooms.find(r => r.id === roomId);
+    if (room?.promo_price && room.promo_price > 0) {
+      return { hasPromo: true, originalPrice: room.base_price, promoPrice: room.promo_price };
+    }
+
+    return { hasPromo: false, originalPrice: 0, promoPrice: 0 };
+  }, [rooms, pricingRules]);
+
+  // ===== 檢查房況 =====
+  const checkAvailability = useCallback((dateStr, roomId) => {
+    if (!dateStr) return false;
+    const booking = bookings[`${dateStr}_${roomId}`];
+    const wholeHouseBooking = Object.values(bookings).find(
+      b => b.date === dateStr && b.is_whole_house
+    );
+    return !booking && !wholeHouseBooking;
+  }, [bookings]);
+
+  // ===== CRUD: Settings =====
+  const updateSettings = useCallback(async (newData) => {
+    try {
+      await updateDoc(doc(db, 'config', 'global_settings'), newData);
+    } catch (e) { console.error('Settings update failed:', e); }
+  }, []);
+
+  // ===== CRUD: Rooms =====
+  const addRoom = useCallback(async (roomData) => {
+    const newId = roomData.id || `room_${Date.now()}`;
+    const { id, ...data } = roomData;
+    await setDoc(doc(db, 'rooms', newId), data);
+    return newId;
+  }, []);
+
+  const updateRoom = useCallback(async (roomId, newData) => {
+    await updateDoc(doc(db, 'rooms', roomId), newData);
+  }, []);
+
+  const deleteRoom = useCallback(async (roomId) => {
+    await deleteDoc(doc(db, 'rooms', roomId));
+  }, []);
+
+  // ===== CRUD: Pricing Rules =====
+  const addPricingRule = useCallback(async (ruleData) => {
+    const ref = await addDoc(collection(db, 'pricing_rules'), ruleData);
+    return ref.id;
+  }, []);
+
+  const updatePricingRule = useCallback(async (ruleId, newData) => {
+    await updateDoc(doc(db, 'pricing_rules', ruleId), newData);
+  }, []);
+
+  const deletePricingRule = useCallback(async (ruleId) => {
+    await deleteDoc(doc(db, 'pricing_rules', ruleId));
+  }, []);
+
+  // ===== CRUD: Bookings =====
+  const saveBooking = useCallback(async (bookingId, data) => {
+    await setDoc(doc(db, 'bookings', bookingId), {
+      ...data,
+      updated_at: new Date().toISOString(),
+    });
+  }, []);
+
+  const deleteBooking = useCallback(async (bookingId) => {
+    await deleteDoc(doc(db, 'bookings', bookingId));
+  }, []);
+
+  // ===== 翻譯 =====
   const t = useCallback((key) => {
     const dict = {
-      zh: { 
-        checkIn: "入住日期", checkOut: "退房日期", step1: "日期與轉單", step2: "房型與加人", 
-        step3: "客資蒐集", step4: "鎖房成功", guest: "位", extra: "加人費", total: "預估總額",
-        name: "姓名", phone: "手機", note: "備註", bookingBtn: "LINE 預訂與鎖房",
-        standard: "標準入住", available: "可預訂", fullyBooked: "該日客滿",
-        partnerInfo: "夥伴推薦", back: "返回", nights: "晚"
+      zh: {
+        checkIn: '入住日期', checkOut: '退房日期', step1: '選擇日期', step2: '選擇房型',
+        step3: '旅客資料', step4: '鎖房成功', guest: '位', extra: '加人費', total: '預估總額',
+        name: '姓名', phone: '手機', note: '備註', bookingBtn: 'LINE 預訂與鎖房',
+        standard: '標準入住', available: '可預訂', fullyBooked: '該日客滿',
+        partnerInfo: '夥伴推薦', back: '返回前台', nights: '晚',
+        weekView: '週檢視', monthView: '月檢視', roomMgmt: '房型管理',
+        pricingMgmt: '定價規則', settings: '全域設定',
       },
-      en: { 
-        checkIn: "Check-in", checkOut: "Check-out", step1: "Date & Referral", step2: "Room & Guests", 
-        step3: "Information", step4: "Locked!", guest: "Guests", extra: "Extra Fee", total: "Total",
-        name: "Name", phone: "Phone", note: "Note", bookingBtn: "LINE Book & Lock",
-        standard: "Standard", available: "Available", fullyBooked: "Sold Out",
-        partnerInfo: "Partner Recommendation", back: "Back", nights: "Nights"
+      en: {
+        checkIn: 'Check-in', checkOut: 'Check-out', step1: 'Select Date', step2: 'Select Room',
+        step3: 'Guest Info', step4: 'Locked!', guest: 'Guests', extra: 'Extra Fee', total: 'Total',
+        name: 'Name', phone: 'Phone', note: 'Note', bookingBtn: 'LINE Book & Lock',
+        standard: 'Standard', available: 'Available', fullyBooked: 'Sold Out',
+        partnerInfo: 'Partner Recommendation', back: 'Back', nights: 'Nights',
+        weekView: 'Week', monthView: 'Month', roomMgmt: 'Rooms',
+        pricingMgmt: 'Pricing', settings: 'Settings',
       }
     };
-    return dict[lang][key] || key;
+    return dict[lang]?.[key] || key;
   }, [lang]);
 
-  // 6. 更新設定指令
-  const updateSettings = async (newData) => {
-    try {
-      await updateDoc(doc(db, "global", "settings"), newData);
-    } catch (e) { console.error("Update failed", e); }
-  };
-
   const value = useMemo(() => ({
-    lang, setLang, t, settings, bookings, getSmartPrice, updateSettings, isDark, toggleDark
-  }), [lang, settings, bookings, getSmartPrice, t, isDark, toggleDark]);
+    lang, setLang, t, isDark, toggleDark,
+    settings, updateSettings,
+    rooms, addRoom, updateRoom, deleteRoom,
+    pricingRules, addPricingRule, updatePricingRule, deletePricingRule,
+    bookings, saveBooking, deleteBooking,
+    getSmartPrice, getPromoInfo, checkAvailability,
+    THEMES,
+  }), [
+    lang, t, isDark, toggleDark,
+    settings, updateSettings,
+    rooms, addRoom, updateRoom, deleteRoom,
+    pricingRules, addPricingRule, updatePricingRule, deletePricingRule,
+    bookings, saveBooking, deleteBooking,
+    getSmartPrice, getPromoInfo, checkAvailability,
+  ]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };

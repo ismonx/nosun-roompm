@@ -2,77 +2,99 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer utilities {
-  .shadow-glow {
-    box-shadow: 0 0 24px rgba(138, 154, 91, 0.15);
-  }
-  .shadow-glow-sm {
-    box-shadow: 0 0 12px rgba(138, 154, 91, 0.1);
-  }
-  .text-shadow-glow {
-    text-shadow: 0 0 30px rgba(138, 154, 91, 0.15);
-  }
-}
-
-/* ===== 文青森林系 Light Mode ===== */
+/* ===== PMS V6.0 — CSS Variable 主題系統 ===== */
 :root {
-  --bg: #F4F1EA;
-  --text: #2C3632;
-  --moss: #8A9A5B;
-  --olive: #6B7A4A;
-  --forest: #4A5A3A;
-  background-color: var(--bg);
-  color: var(--text);
+  /* Default: Midnight Forest Light */
+  --pms-bg: #F4F1EA;
+  --pms-bg-card: #EBE8E0;
+  --pms-text: #2C3632;
+  --pms-text-muted: #5A6B60;
+  --pms-accent: #8A9A5B;
+  --pms-accent-hover: #7A8A4B;
+  --pms-border: #C8C3B8;
+  --pms-border-light: #DDD9D0;
+  --pms-font-heading: 'Noto Serif TC', 'Songti SC', serif;
+  --pms-font-body: 'Noto Sans TC', 'Inter', sans-serif;
+  --pms-gap: 0.5rem;
+  --pms-padding: 0.75rem;
+  --pms-cell-h: 3.5rem;
 }
 
-/* ===== 文青森林系 Dark Mode ===== */
-html.dark {
-  --bg: #1B2420;
-  --text: #D1D7C4;
-  --moss: #C2D5A8;
-  --olive: #8A9A6B;
-  --forest: #3A4A3A;
-  background-color: var(--bg);
-  color: var(--text);
+/* ===== 全域過渡動畫 (500ms 天色漸變) ===== */
+*, *::before, *::after {
+  transition: background-color 500ms ease,
+              color 500ms ease,
+              border-color 500ms ease,
+              box-shadow 500ms ease;
 }
 
-/* ===== 日夜切換漸變動畫 (像天色漸暗一樣滑順) ===== */
-html, body, #root,
-html * {
-  transition: background-color 500ms ease, color 500ms ease, border-color 500ms ease, box-shadow 500ms ease;
-}
-
+/* ===== Base Styles ===== */
 body {
   margin: 0;
   display: block;
   min-width: 320px;
   min-height: 100vh;
-  font-family: 'Noto Sans TC', sans-serif;
-  background-color: var(--bg);
-  color: var(--text);
+  font-family: var(--pms-font-body);
+  background-color: var(--pms-bg);
+  color: var(--pms-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 #root {
   width: 100%;
 }
 
-/* ===== 文藝層次 - 標題使用襯線字體 ===== */
-h1, h2, h3 {
-  font-family: 'Noto Serif TC', 'Songti SC', 'STSong', serif;
+/* ===== 標題使用主題字體 ===== */
+h1, h2, h3, h4 {
+  font-family: var(--pms-font-heading);
 }
 
-/* ===== Custom Scrollbar (文青色系) ===== */
+/* ===== Utility Classes ===== */
+@layer utilities {
+  .shadow-glow {
+    box-shadow: 0 0 20px color-mix(in srgb, var(--pms-accent) 20%, transparent);
+  }
+  .shadow-glow-sm {
+    box-shadow: 0 0 10px color-mix(in srgb, var(--pms-accent) 15%, transparent);
+  }
+  .text-shadow-glow {
+    text-shadow: 0 0 24px color-mix(in srgb, var(--pms-accent) 20%, transparent);
+  }
+}
+
+/* ===== Scrollbar ===== */
 ::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--bg);
+  background: var(--pms-bg);
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--moss);
+  background: var(--pms-border);
   border-radius: 3px;
-  opacity: 0.5;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--olive);
+  background: var(--pms-accent);
+}
+
+/* ===== 刪除線定價 ===== */
+.price-original {
+  text-decoration: line-through;
+  opacity: 0.5;
+  font-size: 0.75em;
+}
+
+/* ===== 日曆：已售罄 ===== */
+.calendar-sold-out {
+  text-decoration: line-through;
+  opacity: 0.35;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+/* ===== 日曆：今日高亮 ===== */
+.calendar-today {
+  box-shadow: inset 0 0 0 2px var(--pms-accent);
 }
