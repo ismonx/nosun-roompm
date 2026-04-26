@@ -1,12 +1,45 @@
-import React, { useState, useEffect, createContext, useContext, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, createContext, useContext, useMemo, useCallback, ReactNode } from 'react';
 import { db } from '../firebase';
-import { doc, onSnapshot, updateDoc, setDoc, deleteDoc, collection, query, getDocs, addDoc } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, setDoc, deleteDoc, collection, addDoc, DocumentData } from 'firebase/firestore';
 import { applyTheme, THEMES } from '../themes';
+import { Room, Booking, PricingRule, PromoCode, AppSettings, ThemeId } from '../types';
 
-const AppContext = createContext();
+interface AppContextType {
+  lang: string;
+  setLang: (lang: string) => void;
+  t: (key: string) => string;
+  isDark: boolean;
+  toggleDark: () => void;
+  settings: AppSettings;
+  updateSettings: (newData: Partial<AppSettings>) => Promise<void>;
+  rooms: Room[];
+  addRoom: (roomData: Room) => Promise<string>;
+  updateRoom: (roomId: string, newData: Partial<Room>) => Promise<void>;
+  deleteRoom: (roomId: string) => Promise<void>;
+  pricingRules: PricingRule[];
+  addPricingRule: (ruleData: Omit<PricingRule, 'id'>) => Promise<string>;
+  updatePricingRule: (ruleId: string, newData: Partial<PricingRule>) => Promise<void>;
+  deletePricingRule: (ruleId: string) => Promise<void>;
+  bookings: Record<string, Booking>;
+  saveBooking: (bookingId: string, data: Booking) => Promise<void>;
+  deleteBooking: (bookingId: string) => Promise<void>;
+  promoCodes: PromoCode[];
+  addPromoCode: (data: Omit<PromoCode, 'id'>) => Promise<void>;
+  updatePromoCode: (id: string, data: Partial<PromoCode>) => Promise<void>;
+  deletePromoCode: (id: string) => Promise<void>;
+  getSmartPrice: (roomId: string, dateStr: string) => number;
+  getPromoInfo: (roomId: string, dateStr: string) => { hasPromo: boolean; originalPrice: number; promoPrice: number };
+  checkAvailability: (dateStr: string, roomId: string) => boolean;
+  partnershipCode: string;
+  setPartnershipCode: (code: string) => void;
+  validateCode: (code: string) => boolean;
+  discountRate: number;
+  THEMES: typeof THEMES;
+}
 
-// ===== 預設資料 (首次建庫用) =====
-const DEFAULT_SETTINGS = {
+const AppContext = createContext<AppContextType | undefined>(undefined);
+
+const DEFAULT_SETTINGS: AppSettings = {
   vendor_id: 'ismonx_primary',
   hostel_name: '防曬不要擦太多民宿',
   hostel_name_en: 'Sunscreen Resort',
@@ -21,9 +54,10 @@ const DEFAULT_SETTINGS = {
   referral_msg_en: 'Fully booked! We recommend our partner: [Partner Name/Link]',
   line_oa_id: '@nosun_happy',
   admin_password: '2026',
+  login_title: 'fUX Center',
 };
 
-const DEFAULT_ROOMS = [
+const DEFAULT_ROOMS: Room[] = [
   {
     id: 'sun',
     name_zh: '山海二人房',
@@ -34,6 +68,7 @@ const DEFAULT_ROOMS = [
     max_capacity: 3,
     extra_guest_fee: 500,
     base_price: 2800,
+    promo_price: 0,
     sort_order: 0,
   },
   {
@@ -46,40 +81,39 @@ const DEFAULT_ROOMS = [
     max_capacity: 6,
     extra_guest_fee: 500,
     base_price: 4200,
+    promo_price: 0,
     sort_order: 1,
   },
 ];
 
-export const AppProvider = ({ children }) => {
-  const [lang, setLang] = useState(() => {
+export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [lang, setLang] = useState<string>(() => {
     const saved = localStorage.getItem('fu_lang');
     if (saved) return saved;
-    // 自動偵測語系：若瀏覽器語言不是 zh- 開頭，預設為 en
-    const browserLang = navigator.language || navigator.userLanguage;
+    const browserLang = navigator.language;
     return browserLang.startsWith('zh') ? 'zh' : 'en';
   });
-  const [isDark, setIsDark] = useState(() => {
+
+  const [isDark, setIsDark] = useState<boolean>(() => {
     const saved = localStorage.getItem('fu_dark');
     if (saved !== null) return saved === 'true';
     return window.matchMedia?.('(prefers-color-scheme: dark)').matches || false;
   });
 
-  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
-  const [rooms, setRooms] = useState([]);
-  const [pricingRules, setPricingRules] = useState([]);
-  const [bookings, setBookings] = useState({});
-  const [promoCodes, setPromoCodes] = useState([]);
+  const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [pricingRules, setPricingRules] = useState<PricingRule[]>([]);
+  const [bookings, setBookings] = useState<Record<string, Booking>>({});
+  const [promoCodes, setPromoCodes] = useState<PromoCode[]>([]);
 
-  // ===== 航空公司優惠碼系統 =====
-  const [partnershipCode, setPartnershipCode] = useState('');
-  const [discountRate, setDiscountRate] = useState(1); // 1 = 不打折
+  const [partnershipCode, setPartnershipCode] = useState<string>('');
+  const [discountRate, setDiscountRate] = useState<number>(1);
 
-  const validateCode = useCallback((code) => {
+  const validateCode = useCallback((code: string) => {
     const trimmed = (code || '').trim().toUpperCase();
     const match = promoCodes.find(p => p.code === trimmed);
     
     if (match) {
-      // 檢查有效期 (若有設定)
       if (match.expiry_date && new Date(match.expiry_date) < new Date()) {
         return false;
       }
@@ -90,9 +124,8 @@ export const AppProvider = ({ children }) => {
     return false;
   }, [promoCodes]);
 
-  // ===== 主題引擎 =====
   useEffect(() => {
-    applyTheme(settings.active_theme || 'forest', isDark);
+    applyTheme(settings.active_theme as ThemeId || 'forest', isDark);
     if (isDark) {
       document.documentElement.classList.add('dark');
     } else {
@@ -103,11 +136,10 @@ export const AppProvider = ({ children }) => {
 
   const toggleDark = useCallback(() => setIsDark(prev => !prev), []);
 
-  // ===== 1. Sync global_settings =====
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'global', 'settings'), (snap) => {
       if (snap.exists()) {
-        setSettings(prev => ({ ...prev, ...snap.data() }));
+        setSettings(prev => ({ ...prev, ...snap.data() as AppSettings }));
       } else {
         setDoc(doc(db, 'global', 'settings'), DEFAULT_SETTINGS);
       }
@@ -115,13 +147,11 @@ export const AppProvider = ({ children }) => {
     return () => unsub();
   }, []);
 
-  // ===== 2. Sync rooms collection =====
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'rooms'), (snap) => {
-      const data = [];
-      snap.forEach(d => data.push({ id: d.id, ...d.data() }));
+      const data: Room[] = [];
+      snap.forEach(d => data.push({ id: d.id, ...d.data() } as Room));
       if (data.length === 0) {
-        // 首次建庫：寫入預設房型
         DEFAULT_ROOMS.forEach(room => {
           const { id, ...roomData } = room;
           setDoc(doc(db, 'rooms', id), roomData);
@@ -135,82 +165,58 @@ export const AppProvider = ({ children }) => {
     return () => unsub();
   }, []);
 
-  // ===== 3. Sync pricing_rules collection =====
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'pricing_rules'), (snap) => {
-      const data = [];
-      snap.forEach(d => data.push({ id: d.id, ...d.data() }));
+      const data: PricingRule[] = [];
+      snap.forEach(d => data.push({ id: d.id, ...d.data() } as PricingRule));
       setPricingRules(data);
     });
     return () => unsub();
   }, []);
 
-  // ===== 4. Sync bookings collection =====
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'bookings'), (snap) => {
-      const data = {};
-      snap.forEach(d => { data[d.id] = { id: d.id, ...d.data() }; });
+      const data: Record<string, Booking> = {};
+      snap.forEach(d => { data[d.id] = { id: d.id, ...d.data() } as Booking; });
       setBookings(data);
     });
     return () => unsub();
   }, []);
 
-  // ===== 5. Sync promo_codes collection =====
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'promo_codes'), (snap) => {
-      const data = [];
-      snap.forEach(d => data.push({ id: d.id, ...d.data() }));
+      const data: PromoCode[] = [];
+      snap.forEach(d => data.push({ id: d.id, ...d.data() } as PromoCode));
       setPromoCodes(data);
     });
     return () => unsub();
   }, []);
 
-  // ===== 5. 語系持久化 =====
   useEffect(() => {
     localStorage.setItem('fu_lang', lang);
   }, [lang]);
 
-  // ===== 三級定價引擎 =====
-  // Priority: pricing_rules.promo_price > pricing_rules.price > room.promo_price > rooms.base_price
-  const getSmartPrice = useCallback((roomId, dateStr) => {
+  const getSmartPrice = useCallback((roomId: string, dateStr: string): number => {
     if (!dateStr || !roomId) return 0;
-
-    // 尋找符合的定價規則（最具體的優先：指定房型 > all）
     const matchingRules = pricingRules.filter(rule =>
       (rule.room_id === roomId || rule.room_id === 'all') &&
       dateStr >= rule.start_date && dateStr <= rule.end_date
     );
-
     const specificRule = matchingRules.find(r => r.room_id === roomId);
     const generalRule = matchingRules.find(r => r.room_id === 'all');
     const activeRule = specificRule || generalRule;
 
     if (activeRule) {
-      // 優先級 1: pricing_rules.promo_price
-      if (activeRule.promo_price && activeRule.promo_price > 0) {
-        return activeRule.promo_price;
-      }
-      // 優先級 2: pricing_rules.price
-      if (activeRule.price && activeRule.price > 0) {
-        return activeRule.price;
-      }
+      if (activeRule.promo_price && activeRule.promo_price > 0) return activeRule.promo_price;
+      if (activeRule.price && activeRule.price > 0) return activeRule.price;
     }
-
-    // 優先級 3: room.promo_price (房型層級優惠價)
     const room = rooms.find(r => r.id === roomId);
-    if (room?.promo_price && room.promo_price > 0) {
-      return room.promo_price;
-    }
-
-    // 優先級 4: rooms.base_price
+    if (room?.promo_price && room.promo_price > 0) return room.promo_price;
     return room?.base_price || 0;
   }, [rooms, pricingRules]);
 
-  // 取得促銷資訊 (前端顯示刪除線用)
-  const getPromoInfo = useCallback((roomId, dateStr) => {
+  const getPromoInfo = useCallback((roomId: string, dateStr: string) => {
     if (!dateStr || !roomId) return { hasPromo: false, originalPrice: 0, promoPrice: 0 };
-
-    // 先檢查 pricing_rules 層級的 promo
     const matchingRules = pricingRules.filter(rule =>
       (rule.room_id === roomId || rule.room_id === 'all') &&
       dateStr >= rule.start_date && dateStr <= rule.end_date
@@ -223,18 +229,14 @@ export const AppProvider = ({ children }) => {
       const originalPrice = activeRule.price || (rooms.find(r => r.id === roomId)?.base_price || 0);
       return { hasPromo: true, originalPrice, promoPrice: activeRule.promo_price };
     }
-
-    // 再檢查房型層級的 promo_price
     const room = rooms.find(r => r.id === roomId);
     if (room?.promo_price && room.promo_price > 0) {
       return { hasPromo: true, originalPrice: room.base_price, promoPrice: room.promo_price };
     }
-
     return { hasPromo: false, originalPrice: 0, promoPrice: 0 };
   }, [rooms, pricingRules]);
 
-  // ===== 檢查房況 =====
-  const checkAvailability = useCallback((dateStr, roomId) => {
+  const checkAvailability = useCallback((dateStr: string, roomId: string): boolean => {
     if (!dateStr) return false;
     const booking = bookings[`${dateStr}_${roomId}`];
     const wholeHouseBooking = Object.values(bookings).find(
@@ -243,74 +245,68 @@ export const AppProvider = ({ children }) => {
     return !booking && !wholeHouseBooking;
   }, [bookings]);
 
-  // ===== CRUD: Settings =====
-  const updateSettings = useCallback(async (newData) => {
+  const updateSettings = useCallback(async (newData: Partial<AppSettings>) => {
     try {
-      await updateDoc(doc(db, 'global', 'settings'), newData);
+      await updateDoc(doc(db, 'global', 'settings'), newData as DocumentData);
     } catch (e) { console.error('Settings update failed:', e); }
   }, []);
 
-  // ===== CRUD: Rooms =====
-  const addRoom = useCallback(async (roomData) => {
+  const addRoom = useCallback(async (roomData: Room) => {
     const newId = roomData.id || `room_${Date.now()}`;
     const { id, ...data } = roomData;
     await setDoc(doc(db, 'rooms', newId), data);
     return newId;
   }, []);
 
-  const updateRoom = useCallback(async (roomId, newData) => {
-    await updateDoc(doc(db, 'rooms', roomId), newData);
+  const updateRoom = useCallback(async (roomId: string, newData: Partial<Room>) => {
+    await updateDoc(doc(db, 'rooms', roomId), newData as DocumentData);
   }, []);
 
-  const deleteRoom = useCallback(async (roomId) => {
+  const deleteRoom = useCallback(async (roomId: string) => {
     await deleteDoc(doc(db, 'rooms', roomId));
   }, []);
 
-  // ===== CRUD: Pricing Rules =====
-  const addPricingRule = useCallback(async (ruleData) => {
+  const addPricingRule = useCallback(async (ruleData: Omit<PricingRule, 'id'>) => {
     const ref = await addDoc(collection(db, 'pricing_rules'), ruleData);
     return ref.id;
   }, []);
 
-  const updatePricingRule = useCallback(async (ruleId, newData) => {
-    await updateDoc(doc(db, 'pricing_rules', ruleId), newData);
+  const updatePricingRule = useCallback(async (ruleId: string, newData: Partial<PricingRule>) => {
+    await updateDoc(doc(db, 'pricing_rules', ruleId), newData as DocumentData);
   }, []);
 
-  const deletePricingRule = useCallback(async (ruleId) => {
+  const deletePricingRule = useCallback(async (ruleId: string) => {
     await deleteDoc(doc(db, 'pricing_rules', ruleId));
   }, []);
 
-  // ===== CRUD: Bookings =====
-  const saveBooking = useCallback(async (bookingId, data) => {
+  const saveBooking = useCallback(async (bookingId: string, data: Booking) => {
     await setDoc(doc(db, 'bookings', bookingId), {
       ...data,
       updated_at: new Date().toISOString(),
     });
   }, []);
 
-  const deleteBooking = useCallback(async (bookingId) => {
+  const deleteBooking = useCallback(async (bookingId: string) => {
     await deleteDoc(doc(db, 'bookings', bookingId));
   }, []);
 
-  // ===== CRUD: Promo Codes =====
-  const addPromoCode = useCallback(async (data) => {
+  const addPromoCode = useCallback(async (data: Omit<PromoCode, 'id'>) => {
     await addDoc(collection(db, 'promo_codes'), {
       ...data,
       created_at: new Date().toISOString()
     });
   }, []);
 
-  const updatePromoCode = useCallback(async (id, data) => {
-    await updateDoc(doc(db, 'promo_codes', id), data);
+  const updatePromoCode = useCallback(async (id: string, data: Partial<PromoCode>) => {
+    await updateDoc(doc(db, 'promo_codes', id), data as DocumentData);
   }, []);
 
-  const deletePromoCode = useCallback(async (id) => {
+  const deletePromoCode = useCallback(async (id: string) => {
     await deleteDoc(doc(db, 'promo_codes', id));
   }, []);
 
-  // ===== 翻譯 =====
-  const t = useCallback((key) => {
-    const dict = {
+  const t = useCallback((key: string): string => {
+    const dict: Record<string, Record<string, string>> = {
       zh: {
         checkIn: '入住日期', checkOut: '退房日期', step1: '選擇日期', step2: '選擇房型',
         step3: '旅客資料', step4: '鎖房成功', guest: '位', extra: '加人費', total: '預估總額',
@@ -333,7 +329,7 @@ export const AppProvider = ({ children }) => {
     return dict[lang]?.[key] || key;
   }, [lang]);
 
-  const value = useMemo(() => ({
+  const value: AppContextType = useMemo(() => ({
     lang, setLang, t, isDark, toggleDark,
     settings, updateSettings,
     rooms, addRoom, updateRoom, deleteRoom,
@@ -357,4 +353,10 @@ export const AppProvider = ({ children }) => {
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
 
-export const useApp = () => useContext(AppContext);
+export const useApp = () => {
+  const context = useContext(AppContext);
+  if (context === undefined) {
+    throw new Error('useApp must be used within an AppProvider');
+  }
+  return context;
+};

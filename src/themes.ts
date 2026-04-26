@@ -3,7 +3,29 @@
  * Midnight Forest / Nanwan Surf / Sunset Vibe
  */
 
-export const THEMES = {
+import { ThemeId } from './types';
+
+interface ThemeColors {
+  bg: string;
+  bgCard: string;
+  text: string;
+  textMuted: string;
+  accent: string;
+  accentHover: string;
+  border: string;
+  borderLight: string;
+}
+
+interface ThemeConfig {
+  name: string;
+  nameZh: string;
+  font: 'serif' | 'sans';
+  density: 'compact' | 'standard' | 'relaxed';
+  light: ThemeColors;
+  dark: ThemeColors;
+}
+
+export const THEMES: Record<string, ThemeConfig> = {
   forest: {
     name: 'Midnight Forest',
     nameZh: '深夜森林',
@@ -12,10 +34,10 @@ export const THEMES = {
     light: {
       bg: '#F4F1EA',
       bgCard: '#EBE8E0',
-      text: '#111816', // Near-black with forest tint (contrast 14:1)
-      textMuted: '#3A4A40', // Dark forest gray (contrast 7:1)
-      accent: '#5F7A3A', // Darkened olive for better text contrast
-      accentHover: '#4F6A2A', // Darker hover
+      text: '#111816',
+      textMuted: '#3A4A40',
+      accent: '#5F7A3A',
+      accentHover: '#4F6A2A',
       border: '#C8C3B8',
       borderLight: '#DDD9D0',
     },
@@ -38,10 +60,10 @@ export const THEMES = {
     light: {
       bg: '#F0F4F8',
       bgCard: '#E6ECF2',
-      text: '#0F172A', // Near-black slate (contrast 15:1)
-      textMuted: '#334155', // Dark slate (contrast 7.5:1)
-      accent: '#3B7BAA', // Darkened blue for better readability
-      accentHover: '#2B6B9A', // Darker hover
+      text: '#0F172A',
+      textMuted: '#334155',
+      accent: '#3B7BAA',
+      accentHover: '#2B6B9A',
       border: '#CBD5E1',
       borderLight: '#E2E8F0',
     },
@@ -64,10 +86,10 @@ export const THEMES = {
     light: {
       bg: '#FFF8F0',
       bgCard: '#F5EDE4',
-      text: '#1A1008', // Near-black warm (contrast 16:1)
-      textMuted: '#4A3828', // Dark warm brown (contrast 7:1)
-      accent: '#B56A30', // Slightly deeper terracotta
-      accentHover: '#A05A20', // Darker hover
+      text: '#1A1008',
+      textMuted: '#4A3828',
+      accent: '#B56A30',
+      accentHover: '#A05A20',
       border: '#D4C4B0',
       borderLight: '#E8DDD0',
     },
@@ -84,10 +106,7 @@ export const THEMES = {
   }
 };
 
-/**
- * 將主題 token 注入為 CSS Variables
- */
-export function applyTheme(themeId, isDark) {
+export function applyTheme(themeId: ThemeId, isDark: boolean) {
   const theme = THEMES[themeId] || THEMES.forest;
   const mode = isDark ? theme.dark : theme.light;
   const root = document.documentElement;
@@ -101,7 +120,6 @@ export function applyTheme(themeId, isDark) {
   root.style.setProperty('--pms-border', mode.border);
   root.style.setProperty('--pms-border-light', mode.borderLight);
 
-  // Font family
   const fontMap = {
     serif: '"Noto Serif TC", "Songti SC", serif',
     sans: '"Inter", "Noto Sans TC", sans-serif',
@@ -109,7 +127,6 @@ export function applyTheme(themeId, isDark) {
   root.style.setProperty('--pms-font-heading', fontMap[theme.font] || fontMap.serif);
   root.style.setProperty('--pms-font-body', '"Noto Sans TC", "Inter", sans-serif');
 
-  // Density spacing
   const densityMap = {
     compact: { gap: '0.5rem', padding: '0.75rem', cellH: '3.5rem' },
     standard: { gap: '0.75rem', padding: '1rem', cellH: '4rem' },

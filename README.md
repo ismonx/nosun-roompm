@@ -30,6 +30,7 @@
 *   **月檢視 (Month View)**：整合式全月統計，支援年月快速跳轉，點擊日期可直達該週細節。
 *   **介面進化**：全站採用 `rounded-md` (6px) 工業風圓角收斂，搭配頂部水平工具列，最大化工作可視空間。
 *   **合作夥伴/優惠碼系統**：全新的 `promo_codes` 模組，支援折扣率自訂、到期日限制與即時驗證。
+*   **TypeScript & 模組化重構**：全站遷移至 TS，管理端 (fUX Center) 已完成模組解耦，大幅優化維護效能。
 
 ### 2. 四級智慧定價引擎 (Pricing Logic)
 優先級演算：
@@ -50,10 +51,10 @@
 ## 🛠 技術棧與開發指南
 
 ### 前端技術
-*   **Framework**: React (Vite)
+*   **Framework**: React (Vite) + TypeScript
 *   **Styling**: Tailwind CSS v4 + CSS Variables Theme Engine
 *   **Icons**: Lucide-react
-*   **State**: Context API (Decoupled Global State)
+*   **State**: Context API (Typed Global State)
 
 ### 後端服務
 *   **Database**: Firebase Firestore (5-Collection Normalized Schema)
@@ -73,9 +74,9 @@ VITE_LINE_OA_ID=@your_id
 
 ### 開發指令
 ```bash
-npm install     # 安裝依賴
-npm run dev     # 啟動開發伺服器
-npm run build   # 執行生產環境建置
+pnpm install    # 安裝依賴 (建議使用 pnpm)
+pnpm dev        # 啟動開發伺服器
+pnpm build      # 執行生產環境建置 (包含 TS 檢查)
 ```
 
 ---
