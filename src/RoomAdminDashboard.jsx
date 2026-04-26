@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useApp } from './context/AppContext';
 import {
   Calendar as CalendarIcon, ChevronLeft, ChevronRight, Settings, LogOut,
   X, Save, Phone, Crown, Wallet, Sun, Moon, Lock, Plus, Trash2, Edit3,
-  Image, DollarSign, Users, Home, LayoutGrid, List, AlertTriangle
+  Image, DollarSign, Users, Home, LayoutGrid, List, AlertTriangle, ExternalLink
 } from 'lucide-react';
 
-// ===== 週視圖格子 =====
-const WeekCell = ({ date, room, booking, onClick, isToday, isPast }) => {
+// ===== 週視圖格子 (Memoized for Smoothness) =====
+const WeekCell = React.memo(({ date, room, booking, onClick, isToday, isPast }) => {
   const statusColors = {
     pending: 'bg-status-pending/90 text-white',
     deposit: 'bg-status-deposit/90 text-white',
@@ -37,10 +38,10 @@ const WeekCell = ({ date, room, booking, onClick, isToday, isPast }) => {
       )}
     </div>
   );
-};
+});
 
-// ===== 月視圖格子 =====
-const MonthCell = ({ date, rooms, bookings, onSelect, isToday, isPast }) => {
+// ===== 月視圖格子 (Memoized for Smoothness) =====
+const MonthCell = React.memo(({ date, rooms, bookings, onSelect, isToday, isPast }) => {
   const dayBookings = rooms.map(r => ({
     room: r,
     booking: bookings[`${date}_${r.id}`]
@@ -77,7 +78,7 @@ const MonthCell = ({ date, rooms, bookings, onSelect, isToday, isPast }) => {
       </div>
     </div>
   );
-};
+});
 
 // ===== 確認刪除 Modal =====
 const ConfirmModal = ({ message, onConfirm, onCancel }) => (
@@ -192,6 +193,14 @@ const RoomAdminDashboard = ({ onLogout }) => {
 
   const today = new Date().toISOString().split('T')[0];
   const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  const wholeHouseDates = useMemo(() => {
+    const dates = {};
+    Object.values(bookings).forEach(b => {
+      if (b.is_whole_house || b.isWholeHouse) dates[b.date] = true;
+    });
+    return dates;
+  }, [bookings]);
 
   // ===== 訂單 Modal =====
   useEffect(() => {
@@ -429,9 +438,18 @@ const RoomAdminDashboard = ({ onLogout }) => {
                   const dayName = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][date.getDay()];
                   const isWeekend = date.getDay() === 0 || date.getDay() === 6;
                   return (
-                    <div key={d} className={`p-2 bg-pms-bg-card border-b border-r border-pms-border-light text-center ${d === today ? 'bg-pms-accent/10' : ''}`}>
-                      <div className={`text-xs font-bold ${isWeekend ? 'text-orange-500' : 'text-pms-text'}`}>{d.split('-').slice(1).join('/')}</div>
-                      <div className={`text-[9px] ${isWeekend ? 'text-orange-400' : 'text-pms-text-muted'}`}>{dayName}</div>
+                    <div key={d} className={`p-2 bg-pms-bg-card border-b border-r border-pms-border-light text-center transition-colors
+                      ${d === today ? 'bg-pms-accent/10' : ''}
+                      ${wholeHouseDates[d] ? 'bg-indigo-500/10' : ''}
+                    `}>
+                      <div className={`text-xs font-bold 
+                        ${wholeHouseDates[d] ? 'text-indigo-600 dark:text-indigo-400' : isWeekend ? 'text-orange-500' : 'text-pms-text'}
+                      `}>
+                        {d.split('-').slice(1).join('/')}
+                      </div>
+                      <div className={`text-[9px] ${wholeHouseDates[d] ? 'text-indigo-400' : isWeekend ? 'text-orange-400' : 'text-pms-text-muted'}`}>
+                        {wholeHouseDates[d] ? '包棟' : dayName}
+                      </div>
                     </div>
                   );
                 })}
@@ -443,7 +461,7 @@ const RoomAdminDashboard = ({ onLogout }) => {
                       {lang === 'zh' ? room.name_zh : room.name_en}
                     </div>
                     {weekDays.map(d => (
-                      <div key={`${d}_${room.id}`} className="p-1 border-b border-r border-pms-border-light">
+                      <div key={`${d}_${room.id}`} className={`p-1 border-b border-r border-pms-border-light transition-colors ${wholeHouseDates[d] ? 'bg-indigo-50/30 dark:bg-indigo-900/10' : ''}`}>
                         <WeekCell
                           date={d}
                           room={room}
@@ -770,6 +788,15 @@ const RoomAdminDashboard = ({ onLogout }) => {
             </div>
 
             <footer className="mt-6 flex gap-3">
+              {modalData.phone && (
+                <a
+                  href={`tel:${modalData.phone}`}
+                  className="p-3 rounded-pms border border-pms-accent text-pms-accent hover:bg-pms-accent hover:text-white transition-all flex items-center justify-center gap-2"
+                  title="一鍵撥號"
+                >
+                  <Phone size={16} />
+                </a>
+              )}
               {bookings[`${selectedCell.date}_${selectedCell.roomId}`] && (
                 <button onClick={handleDeleteBooking} className="py-3 px-4 rounded-pms border border-red-400 text-red-500 text-xs font-bold hover:bg-red-50 transition-all">
                   <Trash2 size={14} />

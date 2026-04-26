@@ -77,11 +77,11 @@ export const AppProvider = ({ children }) => {
 
   // ===== 1. Sync global_settings =====
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, 'config', 'global_settings'), (snap) => {
+    const unsub = onSnapshot(doc(db, 'global', 'settings'), (snap) => {
       if (snap.exists()) {
         setSettings(prev => ({ ...prev, ...snap.data() }));
       } else {
-        setDoc(doc(db, 'config', 'global_settings'), DEFAULT_SETTINGS);
+        setDoc(doc(db, 'global', 'settings'), DEFAULT_SETTINGS);
       }
     });
     return () => unsub();
@@ -208,7 +208,7 @@ export const AppProvider = ({ children }) => {
   // ===== CRUD: Settings =====
   const updateSettings = useCallback(async (newData) => {
     try {
-      await updateDoc(doc(db, 'config', 'global_settings'), newData);
+      await updateDoc(doc(db, 'global', 'settings'), newData);
     } catch (e) { console.error('Settings update failed:', e); }
   }, []);
 

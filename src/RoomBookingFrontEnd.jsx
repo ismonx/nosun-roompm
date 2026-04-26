@@ -1,10 +1,11 @@
 import React, { useState, useMemo, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useApp } from './context/AppContext';
 import { db } from './firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import {
   Calendar, ArrowRight, X, ChevronLeft, ChevronRight,
-  Users, Phone, CheckCircle2, Info, ArrowLeft, Plus, Minus, Sun, Moon
+  Users, Phone, CheckCircle2, Info, ArrowLeft, Plus, Minus, Sun, Moon, Sparkles
 } from 'lucide-react';
 
 const RoomBookingFrontEnd = () => {
@@ -36,6 +37,32 @@ const RoomBookingFrontEnd = () => {
     return diff > 0 ? diff : 1;
   }, [dates.checkIn, dates.checkOut]);
 
+  // ===== ±2日推薦邏輯 =====
+  const recommendations = useMemo(() => {
+    if (!dates.checkIn || !isSoldOut) return [];
+    const suggestions = [];
+    const offsets = [-2, -1, 1, 2];
+    const baseDate = new Date(dates.checkIn);
+
+    offsets.forEach(offset => {
+      const d = new Date(baseDate);
+      d.setDate(baseDate.getDate() + offset);
+      const iso = d.toISOString().split('T')[0];
+      if (iso < today) return;
+
+      const availableRoom = rooms.find(r => checkAvailability(iso, r.id));
+      if (availableRoom) {
+        // 找到該日最低價
+        const prices = rooms
+          .filter(r => checkAvailability(iso, r.id))
+          .map(r => getSmartPrice(r.id, iso));
+        const minPrice = Math.min(...prices);
+        suggestions.push({ date: iso, minPrice });
+      }
+    });
+    return suggestions;
+  }, [dates.checkIn, isSoldOut, rooms, checkAvailability, getSmartPrice, today]);
+
   const currentRoom = rooms.find(r => r.id === selectedRoomId);
   const totalBill = useMemo(() => {
     if (!selectedRoomId || !dates.checkIn) return 0;
@@ -65,7 +92,19 @@ const RoomBookingFrontEnd = () => {
       const roomName = lang === 'zh' ? currentRoom.name_zh : currentRoom.name_en;
       const template = `【FU-HOSTEL 預訂通報】\n狀態：等待匯款\n日期：${dates.checkIn} (${nightCount}晚)\n房型：${roomName}\n人數：${currentRoom.standard_capacity}+${extraGuests}\n總額：NT$ ${totalBill.toLocaleString()}\n---\n訂房人：${guestInfo.name}\n電話：${guestInfo.phone}\n備註：${guestInfo.note || '無'}\n---\n請於24小時內匯款。`;
       const lineId = settings.line_oa_id || import.meta.env.VITE_LINE_OA_ID || '@nosun_happy';
-      window.location.href = `https://line.me/R/oaMessage/${lineId}/?${encodeURIComponent(template)}`;
+      const lineUrl = `https://line.me/R/oaMessage/${lineId}/?${encodeURIComponent(template)}`;
+
+      // 判斷是否為行動裝置
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+      if (isMobile) {
+        // 行動裝置：嘗試自動喚起 LINE App
+        window.location.href = lineUrl;
+      } else {
+        // 電腦端：不自動彈出視窗（避免跳轉到 LINE 官網），直接顯示成功卡片讓使用者手動點擊
+        console.log('Desktop detected: Success card shown. User can manually open LINE.');
+      }
+      
       setStep(4);
     } catch (e) {
       console.error('Booking error:', e);
@@ -186,61 +225,94 @@ const RoomBookingFrontEnd = () => {
       </nav>
 
       <main className="px-5 md:px-8 max-w-xl mx-auto py-10 space-y-10">
-        {/* Step 1: 日期選擇 */}
-        {step === 1 && (
-          <div className="space-y-10">
-            <header className="text-center space-y-3">
-              <h2 className="font-heading text-4xl font-bold text-pms-text leading-tight text-shadow-glow">
-                {settings[`home_title_${lang}`] || settings.hostel_name}
-              </h2>
-              <p className="text-[10px] text-pms-text-muted uppercase tracking-[0.3em] font-bold">
-                {settings[`home_subtitle_${lang}`]}
-              </p>
-            </header>
-
-            <div className="space-y-4">
-              {['checkIn', 'checkOut'].map(type => (
-                <button key={type}
-                  onClick={() => { setSelectingType(type); setIsDatePickerOpen(true); }}
-                  className={`w-full p-6 bg-pms-bg-card rounded-pms border-2 flex justify-between items-center transition-all
-                    ${dates[type] ? 'border-pms-accent bg-pms-accent/5 scale-[0.99]' : 'border-pms-border-light'}`}
-                >
-                  <div className="text-left">
-                    <p className="text-[9px] uppercase font-bold text-pms-text-muted mb-1.5 tracking-widest">{t(type)}</p>
-                    <p className={`text-lg font-bold ${!dates[type] ? 'text-pms-text-muted opacity-50' : 'text-pms-text'}`}>
-                      {dates[type] || getDatePlaceholder(type)}
-                    </p>
-                  </div>
-                  <Calendar className={dates[type] ? 'text-pms-accent' : 'text-pms-text-muted opacity-30'} size={20} />
-                </button>
-              ))}
-            </div>
-
-            {isSoldOut && (
-              <div className="p-6 bg-orange-500/5 rounded-pms border border-orange-500/20 space-y-4">
-                <div className="flex items-center gap-2 text-orange-500 font-bold text-sm"><Info size={18} /> {t('fullyBooked')}</div>
-                <p className="text-xs text-pms-text-muted">別擔心！請嘗試選擇其他日期。</p>
-                {settings.referral_switch && (
-                  <p className="text-[10px] text-center italic text-pms-text-muted pt-3 border-t border-orange-500/10">
-                    💡 {settings[`referral_msg_${lang}`]}
-                  </p>
-                )}
-              </div>
-            )}
-
-            <button
-              disabled={!dates.checkIn || !dates.checkOut || isSoldOut}
-              onClick={() => setStep(2)}
-              className="w-full bg-pms-accent text-white font-bold py-5 rounded-pms text-lg active:scale-[0.98] disabled:opacity-20 transition-all shadow-glow"
+        <AnimatePresence mode="wait">
+          {/* Step 1: 日期選擇 */}
+          {step === 1 && (
+            <motion.div
+              key="step1"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+              className="space-y-10"
             >
-              {lang === 'zh' ? '選擇房型' : 'CHOOSE ROOM'} <ArrowRight className="inline ml-2" size={20} />
-            </button>
-          </div>
-        )}
+              <header className="text-center space-y-3">
+                <h2 className="font-heading text-4xl font-bold text-pms-text leading-tight text-shadow-glow">
+                  {settings[`home_title_${lang}`] || settings.hostel_name}
+                </h2>
+                <p className="text-[10px] text-pms-text-muted uppercase tracking-[0.3em] font-bold">
+                  {settings[`home_subtitle_${lang}`]}
+                </p>
+              </header>
+
+              <div className="space-y-4">
+                {['checkIn', 'checkOut'].map(type => (
+                  <button key={type}
+                    onClick={() => { setSelectingType(type); setIsDatePickerOpen(true); }}
+                    className={`w-full p-6 bg-pms-bg-card rounded-pms border-2 flex justify-between items-center transition-all
+                      ${dates[type] ? 'border-pms-accent bg-pms-accent/5 scale-[0.99]' : 'border-pms-border-light shadow-sm'}`}
+                  >
+                    <div className="text-left">
+                      <p className="text-[9px] uppercase font-bold text-pms-text-muted mb-1.5 tracking-widest">{t(type)}</p>
+                      <p className={`text-lg font-bold ${!dates[type] ? 'text-pms-text-muted opacity-50' : 'text-pms-text'}`}>
+                        {dates[type] || getDatePlaceholder(type)}
+                      </p>
+                    </div>
+                    <Calendar className={dates[type] ? 'text-pms-accent' : 'text-pms-text-muted opacity-30'} size={20} />
+                  </button>
+                ))}
+              </div>
+
+              {isSoldOut && (
+                <div className="space-y-6">
+                  <div className="p-6 bg-orange-500/5 rounded-pms border border-orange-500/20 space-y-4">
+                    <div className="flex items-center gap-2 text-orange-500 font-bold text-sm"><Info size={18} /> {t('fullyBooked')}</div>
+                    <p className="text-xs text-pms-text-muted">別擔心！我們為您尋找鄰近日期：</p>
+                    
+                    {/* 推薦卡片 */}
+                    <div className="grid grid-cols-2 gap-3">
+                      {recommendations.map(rec => (
+                        <button
+                          key={rec.date}
+                          onClick={() => setDates({ ...dates, checkIn: rec.date })}
+                          className="p-3 bg-pms-bg rounded-pms border border-pms-border-light hover:border-pms-accent transition-all text-left"
+                        >
+                          <p className="text-[10px] font-bold text-pms-text-muted">{rec.date.split('-').slice(1).join('/')}</p>
+                          <p className="text-xs font-bold text-pms-accent">NT$ {rec.minPrice.toLocaleString()} 起</p>
+                        </button>
+                      ))}
+                    </div>
+
+                    {settings.referral_switch && (
+                      <p className="text-[10px] text-center italic text-pms-text-muted pt-3 border-t border-orange-500/10">
+                        💡 {settings[`referral_msg_${lang}`]}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <button
+                disabled={!dates.checkIn || !dates.checkOut || isSoldOut}
+                onClick={() => setStep(2)}
+                className="w-full bg-pms-accent text-white font-bold py-5 rounded-pms text-lg active:scale-[0.98] disabled:opacity-20 transition-all shadow-glow flex items-center justify-center gap-2 group"
+              >
+                {lang === 'zh' ? '選擇房型' : 'CHOOSE ROOM'} 
+                <ArrowRight className="group-hover:translate-x-1 transition-transform" size={20} />
+              </button>
+            </motion.div>
+          )}
 
         {/* Step 2: 房型選擇 */}
         {step === 2 && (
-          <div className="space-y-8">
+          <motion.div
+            key="step2"
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -50 }}
+            transition={{ duration: 0.4 }}
+            className="space-y-8"
+          >
             <h2 className="font-heading text-3xl font-bold text-center text-pms-text">{lang === 'zh' ? '選擇您的空間' : 'Select Your Space'}</h2>
             <div className="space-y-5">
               {rooms.map(room => {
@@ -254,10 +326,10 @@ const RoomBookingFrontEnd = () => {
                       disabled={!isAvailable}
                       onClick={() => { setSelectedRoomId(room.id); setExtraGuests(0); }}
                       className={`w-full rounded-pms border-2 text-left overflow-hidden transition-all
-                        ${isSelected ? 'border-pms-accent bg-pms-accent text-white' : 'border-pms-border-light bg-pms-bg-card'}`}
+                        ${isSelected ? 'border-pms-accent bg-pms-accent text-white shadow-lg scale-[1.01]' : 'border-pms-border-light bg-pms-bg-card hover:border-pms-accent/50'}`}
                     >
                       {room.photos?.[0] && (
-                        <img src={room.photos[0]} alt={roomName} className="w-full h-36 object-cover" />
+                        <img src={room.photos[0]} alt={roomName} className="w-full h-40 object-cover" />
                       )}
                       <div className="p-5 flex justify-between items-start">
                         <div>
@@ -272,25 +344,34 @@ const RoomBookingFrontEnd = () => {
                       </div>
                     </button>
 
-                    {isSelected && (
-                      <div className="mt-3 p-5 bg-pms-bg-card rounded-pms border border-pms-border-light space-y-5">
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <p className="text-[10px] font-bold text-pms-text-muted uppercase tracking-widest mb-1">{t('extra')}</p>
-                            <p className="text-xs font-bold text-pms-text">+NT$ {room.extra_guest_fee} / 人</p>
+                    <AnimatePresence>
+                      {isSelected && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="mt-3 p-5 bg-pms-bg-card rounded-pms border border-pms-border-light space-y-5 shadow-inner">
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <p className="text-[10px] font-bold text-pms-text-muted uppercase tracking-widest mb-1">{t('extra')}</p>
+                                <p className="text-xs font-bold text-pms-text">+NT$ {room.extra_guest_fee} / 人</p>
+                              </div>
+                              <div className="flex items-center gap-4 bg-pms-bg p-2 rounded-pms border border-pms-border-light">
+                                <button onClick={() => setExtraGuests(Math.max(0, extraGuests - 1))} className="p-1 hover:text-pms-accent text-pms-text"><Minus size={18} /></button>
+                                <span className="text-lg font-bold w-5 text-center text-pms-text">{extraGuests}</span>
+                                <button onClick={() => setExtraGuests(Math.min(room.max_capacity - room.standard_capacity, extraGuests + 1))} className="p-1 hover:text-pms-accent text-pms-text"><Plus size={18} /></button>
+                              </div>
+                            </div>
+                            <div className="pt-4 border-t border-pms-border-light flex justify-between items-center">
+                              <span className="text-[9px] font-bold text-pms-text-muted uppercase tracking-widest">{t('total')} ({nightCount} {t('nights')})</span>
+                              <span className="text-2xl font-bold text-pms-accent">NT$ {totalBill.toLocaleString()}</span>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-4 bg-pms-bg p-2 rounded-pms border border-pms-border-light">
-                            <button onClick={() => setExtraGuests(Math.max(0, extraGuests - 1))} className="p-1 hover:text-pms-accent text-pms-text"><Minus size={18} /></button>
-                            <span className="text-lg font-bold w-5 text-center text-pms-text">{extraGuests}</span>
-                            <button onClick={() => setExtraGuests(Math.min(room.max_capacity - room.standard_capacity, extraGuests + 1))} className="p-1 hover:text-pms-accent text-pms-text"><Plus size={18} /></button>
-                          </div>
-                        </div>
-                        <div className="pt-4 border-t border-pms-border-light flex justify-between items-center">
-                          <span className="text-[9px] font-bold text-pms-text-muted uppercase tracking-widest">{t('total')} ({nightCount} {t('nights')})</span>
-                          <span className="text-2xl font-bold text-pms-accent">NT$ {totalBill.toLocaleString()}</span>
-                        </div>
-                      </div>
-                    )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 );
               })}
@@ -302,15 +383,22 @@ const RoomBookingFrontEnd = () => {
             >
               {lang === 'zh' ? '繼續填寫' : 'CONTINUE'} <ArrowRight className="inline ml-2" size={20} />
             </button>
-          </div>
+          </motion.div>
         )}
 
         {/* Step 3: 旅客資料 */}
         {step === 3 && (
-          <div className="space-y-8">
+          <motion.div
+            key="step3"
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -50 }}
+            transition={{ duration: 0.4 }}
+            className="space-y-8"
+          >
             <h2 className="font-heading text-3xl font-bold text-center text-pms-text">{t('step3')}</h2>
 
-            <div className="bg-pms-bg-card p-5 rounded-pms border border-pms-border-light">
+            <div className="bg-pms-bg-card p-5 rounded-pms border border-pms-border-light shadow-sm">
               <div className="flex justify-between text-[10px] font-bold text-pms-text-muted uppercase tracking-widest">
                 <span>Summary</span>
                 <span>{lang === 'zh' ? currentRoom?.name_zh : currentRoom?.name_en} · {nightCount} {t('nights')}</span>
@@ -331,7 +419,7 @@ const RoomBookingFrontEnd = () => {
                     type={field.type} placeholder={t(field.key)} required
                     value={guestInfo[field.key]}
                     onChange={e => setGuestInfo({ ...guestInfo, [field.key]: e.target.value })}
-                    className="w-full bg-pms-bg-card p-4 pl-12 rounded-pms border border-pms-border-light font-bold text-sm focus:border-pms-accent outline-none text-pms-text placeholder:text-pms-text-muted/40"
+                    className="w-full bg-pms-bg-card p-4 pl-12 rounded-pms border border-pms-border-light font-bold text-sm focus:border-pms-accent outline-none text-pms-text placeholder:text-pms-text-muted/40 transition-all focus:shadow-md"
                   />
                   <div className="absolute left-4 top-1/2 -translate-y-1/2 text-pms-text-muted opacity-30 group-focus-within:opacity-100 group-focus-within:text-pms-accent transition-all">
                     {field.icon}
@@ -342,7 +430,7 @@ const RoomBookingFrontEnd = () => {
                 placeholder={t('note')}
                 value={guestInfo.note}
                 onChange={e => setGuestInfo({ ...guestInfo, note: e.target.value })}
-                className="w-full bg-pms-bg-card p-4 rounded-pms border border-pms-border-light font-medium text-sm h-24 focus:border-pms-accent outline-none text-pms-text resize-none placeholder:text-pms-text-muted/40"
+                className="w-full bg-pms-bg-card p-4 rounded-pms border border-pms-border-light font-medium text-sm h-24 focus:border-pms-accent outline-none text-pms-text resize-none placeholder:text-pms-text-muted/40 transition-all focus:shadow-md"
               />
             </div>
 
@@ -353,28 +441,64 @@ const RoomBookingFrontEnd = () => {
             >
               {t('bookingBtn')}
             </button>
-          </div>
+          </motion.div>
         )}
 
         {/* Step 4: 完成 */}
         {step === 4 && (
-          <div className="text-center space-y-10 py-8">
-            <div className="bg-pms-accent/15 w-32 h-32 rounded-full flex items-center justify-center mx-auto border-4 border-pms-accent shadow-glow animate-bounce">
+          <motion.div
+            key="step4"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center space-y-10 py-8"
+          >
+            <div className="bg-pms-accent/15 w-32 h-32 rounded-full flex items-center justify-center mx-auto border-4 border-pms-accent shadow-glow relative">
               <CheckCircle2 size={64} className="text-pms-accent" />
+              <motion.div
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.3 }}
+                className="absolute -top-2 -right-2 bg-white rounded-full p-2 text-pms-accent shadow-lg"
+              >
+                <Sparkles size={20} />
+              </motion.div>
             </div>
-            <h2 className="font-heading text-4xl font-bold text-pms-accent">Booking Locked!</h2>
-            <div className="space-y-3">
-              <p className="text-pms-text font-bold text-lg">房源已為您保留 24 小時。</p>
-              <p className="text-pms-text-muted text-sm">請依 LINE 訊息引导完成匯款確認。<br />若未收到訊息請聯繫官方客服。</p>
+            <h2 className="font-heading text-4xl font-bold text-pms-accent">已完成預訂申請</h2>
+            <div className="space-y-4">
+              <p className="text-pms-text font-bold text-lg">請稍待管家回覆確認</p>
+              <div className="bg-pms-bg-card/50 p-6 rounded-pms border border-pms-border-light space-y-4 mx-6">
+                <p className="text-xs text-pms-text-muted leading-relaxed">
+                  房源已為您保留 24 小時。<br />
+                  請務必加入官方 LINE 傳送預訂通報，以便管家為您鎖房。
+                </p>
+                <div className="py-3 px-4 bg-pms-bg rounded border border-pms-accent/20 flex flex-col items-center gap-2">
+                  <p className="text-[10px] font-bold text-pms-text-muted uppercase tracking-widest">官方 LINE ID</p>
+                  <p className="text-xl font-bold text-pms-accent select-all">{settings.line_oa_id || '@855txvpy'}</p>
+                </div>
+              </div>
             </div>
-            <button
-              onClick={() => { setStep(1); setDates({ checkIn: '', checkOut: '' }); setSelectedRoomId(null); }}
-              className="text-pms-accent font-bold text-xs uppercase tracking-widest opacity-50 hover:opacity-100 transition-all border-b-2 border-pms-accent/20 pb-1"
-            >
-              Back to Start
-            </button>
-          </div>
+            
+            <div className="flex flex-col gap-4 px-10">
+              <a 
+                href={`https://line.me/R/oaMessage/${settings.line_oa_id || import.meta.env.VITE_LINE_OA_ID || '@nosun_happy'}/?${encodeURIComponent(`【重發預訂通報】\n姓名：${guestInfo.name}\n日期：${dates.checkIn}`)}`}
+                target="_blank" rel="noreferrer"
+                className="bg-[#00B900] text-white py-5 rounded-pms font-bold text-sm shadow-lg flex items-center justify-center gap-3 active:scale-95 transition-all"
+              >
+                <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
+                  <span className="text-[#00B900] text-[10px]">L</span>
+                </div>
+                開啟 LINE 傳送預訂通報
+              </a>
+              <button
+                onClick={() => { setStep(1); setDates({ checkIn: '', checkOut: '' }); setSelectedRoomId(null); }}
+                className="text-pms-text-muted font-bold text-[10px] uppercase tracking-widest opacity-40 hover:opacity-100 transition-all pt-4"
+              >
+                ← Back to Start
+              </button>
+            </div>
+          </motion.div>
         )}
+      </AnimatePresence>
       </main>
 
       <footer className="mt-16 text-center py-8 border-t border-pms-border-light max-w-xs mx-auto">

@@ -53,13 +53,20 @@ h1, h2, h3, h4 {
 /* ===== Utility Classes ===== */
 @layer utilities {
   .shadow-glow {
-    box-shadow: 0 0 20px color-mix(in srgb, var(--pms-accent) 20%, transparent);
+    box-shadow: 0 15px 30px -10px color-mix(in srgb, var(--pms-accent) 40%, transparent),
+                0 0 20px color-mix(in srgb, var(--pms-accent) 20%, transparent);
   }
   .shadow-glow-sm {
-    box-shadow: 0 0 10px color-mix(in srgb, var(--pms-accent) 15%, transparent);
+    box-shadow: 0 8px 16px -6px color-mix(in srgb, var(--pms-accent) 30%, transparent),
+                0 0 10px color-mix(in srgb, var(--pms-accent) 15%, transparent);
   }
   .text-shadow-glow {
     text-shadow: 0 0 24px color-mix(in srgb, var(--pms-accent) 20%, transparent);
+  }
+  .glass {
+    background: color-mix(in srgb, var(--pms-bg-card) 70%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
   }
 }
 
