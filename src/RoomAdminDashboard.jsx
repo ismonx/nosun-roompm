@@ -26,14 +26,14 @@ const WeekCell = React.memo(({ date, room, booking, onClick, isToday, isPast }) 
     >
       {booking ? (
         <div className="flex flex-col gap-0.5">
-          <span className="text-[11px] font-bold truncate">{booking.customer_name || booking.customerName}</span>
-          <span className="text-[9px] opacity-75">
+          <span className="text-[11px] font-bold truncate opacity-100">{booking.customer_name || booking.customerName}</span>
+          <span className="text-[9px] font-bold opacity-100 text-white/90">
             ${((booking.total_price || booking.totalPrice || 0) / 1000).toFixed(1)}k
           </span>
         </div>
       ) : (
         <div className="flex items-center justify-center h-full">
-          <span className="text-[11px] font-bold text-pms-accent/60">空房</span>
+          <span className="text-[11px] font-bold text-pms-accent">空房</span>
         </div>
       )}
     </div>
@@ -109,6 +109,7 @@ const RoomAdminDashboard = ({ onLogout }) => {
     rooms, addRoom, updateRoom, deleteRoom,
     pricingRules, addPricingRule, updatePricingRule, deletePricingRule,
     bookings, saveBooking, deleteBooking,
+    promoCodes, addPromoCode, updatePromoCode, deletePromoCode,
     getSmartPrice, THEMES,
   } = useApp();
 
@@ -128,6 +129,7 @@ const RoomAdminDashboard = ({ onLogout }) => {
   const [selectedCell, setSelectedCell] = useState(null);
   const [editingRoom, setEditingRoom] = useState(null);
   const [editingRule, setEditingRule] = useState(null);
+  const [editingPromo, setEditingPromo] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
 
   const [modalData, setModalData] = useState({
@@ -314,7 +316,7 @@ const RoomAdminDashboard = ({ onLogout }) => {
               <Lock size={24} className="text-pms-accent" />
             </div>
           </div>
-          <h1 className="font-heading text-xl font-bold text-pms-text text-center tracking-wide">FU OPS CENTER</h1>
+          <h1 className="font-heading text-xl font-bold text-pms-text text-center tracking-wide">fUX Center</h1>
           <input
             type="password" placeholder="ENTER KEY"
             value={loginPassword}
@@ -660,7 +662,8 @@ const RoomAdminDashboard = ({ onLogout }) => {
                 { key: 'home_title_en', label: 'Title (EN)' },
                 { key: 'home_subtitle_zh', label: '副標 (中)' },
                 { key: 'home_subtitle_en', label: 'Subtitle (EN)' },
-                { key: 'hostel_name', label: '民宿名稱' },
+                { key: 'hostel_name', label: '民宿名稱 (中)' },
+                { key: 'hostel_name_en', label: 'Hostel Name (EN)' },
               ].map(f => (
                 <div key={f.key} className="space-y-1">
                   <label className="text-[10px] font-bold text-pms-text-muted uppercase tracking-wider">{f.label}</label>
@@ -701,6 +704,43 @@ const RoomAdminDashboard = ({ onLogout }) => {
                 onChange={e => updateSettings({ admin_password: e.target.value })}
                 className="w-full bg-pms-bg border border-pms-border rounded-pms p-3 text-sm font-mono text-pms-text focus:border-pms-accent outline-none"
               />
+            </div>
+
+            {/* 推薦碼/合作夥伴管理 */}
+            <div className="bg-pms-bg-card border border-pms-border-light rounded-pms p-5 space-y-4">
+              <div className="flex justify-between items-center">
+                <h3 className="font-bold text-sm text-pms-accent">推薦碼 / 合作夥伴</h3>
+                <button onClick={() => setEditingPromo('new')} className="flex items-center gap-1.5 px-3 py-1.5 bg-pms-accent text-white rounded-pms text-[10px] font-bold hover:bg-pms-accent-hover transition-all">
+                  <Plus size={12} /> 新增推薦碼
+                </button>
+              </div>
+              
+              <div className="space-y-2">
+                {promoCodes.map(promo => (
+                  <div key={promo.id} className="flex items-center justify-between p-3 bg-pms-bg rounded-pms border border-pms-border-light">
+                    <div className="flex flex-col gap-1">
+                      <div className="text-[11px] font-bold text-pms-text flex flex-wrap gap-x-3 gap-y-1">
+                        <span>推薦碼：{promo.code}</span>
+                        <span>名稱：{promo.name}</span>
+                      </div>
+                      <div className="text-[10px] text-pms-text-muted font-medium flex flex-wrap gap-x-3 gap-y-1">
+                        <span>折扣：{Math.round((1 - (promo.discount || 1)) * 100)}%</span>
+                        <span>到期日：{promo.expiry_date || '無期限'}</span>
+                      </div>
+                    </div>
+                    <div className="flex gap-1">
+                      <button onClick={() => setEditingPromo(promo.id)} className="p-1.5 rounded-pms border border-pms-border hover:bg-pms-accent/10 text-pms-text-muted"><Edit3 size={12} /></button>
+                      <button onClick={() => setConfirmDelete({
+                        message: `確定要刪除推薦碼「${promo.code}」嗎？`,
+                        onConfirm: async () => { await deletePromoCode(promo.id); setConfirmDelete(null); }
+                      })} className="p-1.5 rounded-pms border border-red-300 text-red-500 hover:bg-red-50"><Trash2 size={12} /></button>
+                    </div>
+                  </div>
+                ))}
+                {promoCodes.length === 0 && (
+                  <p className="text-center py-4 text-[10px] text-pms-text-muted italic">目前尚無推薦碼</p>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -952,6 +992,70 @@ const RoomAdminDashboard = ({ onLogout }) => {
           </div>
         </div>
       )}
+      {/* ===== 推薦碼編輯 Modal ===== */}
+      {editingPromo && (
+        <PromoEditModal
+          promo={editingPromo === 'new' ? { code: '', name: '', discount: 0.9, expiry_date: '' } : promoCodes.find(p => p.id === editingPromo)}
+          onClose={() => setEditingPromo(null)}
+          onSave={async (data) => {
+            if (editingPromo === 'new') {
+              await addPromoCode(data);
+            } else {
+              await updatePromoCode(editingPromo, data);
+            }
+            setEditingPromo(null);
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
+// ===== 子組件: 推薦碼編輯 Modal =====
+const PromoEditModal = ({ promo, onClose, onSave }) => {
+  const [form, setForm] = useState(promo);
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-pms-bg border border-pms-border rounded-pms p-6 w-full max-w-sm shadow-2xl">
+        <header className="flex justify-between items-center mb-6">
+          <h3 className="font-heading text-lg font-bold text-pms-text">{promo.id ? '編輯推薦碼' : '新增推薦碼'}</h3>
+          <button onClick={onClose} className="p-2 rounded-pms hover:bg-pms-accent/10 text-pms-text-muted"><X size={18} /></button>
+        </header>
+        <div className="space-y-4">
+          <div>
+            <label className="text-[10px] font-bold text-pms-text-muted uppercase tracking-wider">代碼 (如: CI888)</label>
+            <input type="text" value={form.code} onChange={e => setForm({ ...form, code: e.target.value.toUpperCase() })}
+              className="w-full bg-pms-bg-card border border-pms-border rounded-pms p-3 text-sm font-bold focus:border-pms-accent outline-none text-pms-text mt-1" />
+          </div>
+          <div>
+            <label className="text-[10px] font-bold text-pms-text-muted uppercase tracking-wider">名稱 (如: 華航)</label>
+            <input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
+              className="w-full bg-pms-bg-card border border-pms-border rounded-pms p-3 text-sm font-bold focus:border-pms-accent outline-none text-pms-text mt-1" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-[10px] font-bold text-pms-text-muted uppercase tracking-wider">折扣 (0.85 = 85折)</label>
+              <input type="number" step="0.01" value={form.discount} onChange={e => setForm({ ...form, discount: Number(e.target.value) })}
+                className="w-full bg-pms-bg-card border border-pms-border rounded-pms p-3 text-sm font-bold focus:border-pms-accent outline-none text-pms-text mt-1" />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold text-pms-text-muted uppercase tracking-wider">到期日</label>
+              <input type="date" value={form.expiry_date} onChange={e => setForm({ ...form, expiry_date: e.target.value })}
+                className="w-full bg-pms-bg-card border border-pms-border rounded-pms p-3 text-[11px] font-bold focus:border-pms-accent outline-none text-pms-text mt-1" />
+            </div>
+          </div>
+        </div>
+        <footer className="mt-6">
+          <button 
+            disabled={!form.code || !form.name}
+            onClick={() => onSave(form)} 
+            className="w-full bg-pms-accent text-white font-bold py-3 rounded-pms hover:bg-pms-accent-hover active:scale-[0.98] disabled:opacity-50 transition-all text-sm flex items-center justify-center gap-2"
+          >
+            <Save size={16} /> 儲存推薦碼
+          </button>
+        </footer>
+      </div>
     </div>
   );
 };

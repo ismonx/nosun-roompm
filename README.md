@@ -9,15 +9,17 @@
 [ **前端：智慧預訂門戶** ] 
       |
       |-- (A) **四層定價引擎**：自動計算 Promo > Rule > Room Promo > Base Price
-      |-- (B) **即時房態監控**：日曆自動顯示已售罄、今日高亮，防止 Overbooking
-      |-- (C) **LINE OA 深度整合**：一鍵預訂並自動生成完整的帶位資訊字串
+      |-- (B) **優惠碼結帳**：即時驗證折抵碼，重新計算總額
+      |-- (C) **雙語系支援**：自動偵測瀏覽器語言 (ZH/EN)，無縫切換雙語內容
+      |-- (D) **LINE OA 深度整合**：一鍵預訂並自動生成完整的帶位資訊字串
       V
-[ **後端：Firestore 解耦架構** ] <----> [ **管理端：FU OPS CENTER** ]
+[ **後端：Firestore 解耦架構** ] <----> [ **管理端：fUX Center** ]
       | (Collection 化管理)                 |
       |-- config/global_settings          |-- (A) **週矩陣檢視**：CSS Grid 自適應寬度，一眼透視當週房況
       |-- rooms                           |-- (B) **月曆檢視**：支援年份/月份快速跳轉
-      |-- pricing_rules                   |-- (C) **房型定價管理**：完整 CRUD 卡片介面
+      |-- pricing_rules                   |-- (C) **房型定價與推薦碼管理**：完整 CRUD 卡片介面
       |-- bookings                        |-- (D) **三主題切換**：深夜/南灣/恆春 Style 一鍵切換
+      |-- promo_codes                     |-- (E) **無障礙對比度**：全面符合 WCAG AA 日間模式規範
 
 ---
 
@@ -27,6 +29,7 @@
 *   **週檢視 (Week View)**：工業級自動伸展佈局。房型欄固定，日期欄根據螢幕自動延伸。提供上週/下週/今日快速切換。
 *   **月檢視 (Month View)**：整合式全月統計，支援年月快速跳轉，點擊日期可直達該週細節。
 *   **介面進化**：全站採用 `rounded-md` (6px) 工業風圓角收斂，搭配頂部水平工具列，最大化工作可視空間。
+*   **合作夥伴/優惠碼系統**：全新的 `promo_codes` 模組，支援折扣率自訂、到期日限制與即時驗證。
 
 ### 2. 四級智慧定價引擎 (Pricing Logic)
 優先級演算：
@@ -40,7 +43,7 @@
 *   🌲 **深夜森林 (Midnight Forest)**：低飽和深邃綠，沉穩文青感的極致。
 *   🌊 **南灣浪花 (Nanwan Surf)**：沁涼輕盈藍，充滿海洋呼吸感的排版。
 *   🌇 **恆春落日 (Sunset Vibe)**：溫暖大地橘，如夕陽灑落的舒適調性。
-*   🌗 **全域夜間模式**：所有主題皆支援一鍵天黑，平滑 500ms 漸變效果。
+*   🌗 **全域夜間模式**：所有主題皆支援一鍵天黑，平滑 500ms 漸變效果。日間模式已全面加強文字對比度，提升閱讀清晰度。
 
 ---
 
@@ -48,12 +51,12 @@
 
 ### 前端技術
 *   **Framework**: React (Vite)
-*   **Styling**: Tailwind CSS + CSS Variables Theme Engine
+*   **Styling**: Tailwind CSS v4 + CSS Variables Theme Engine
 *   **Icons**: Lucide-react
 *   **State**: Context API (Decoupled Global State)
 
 ### 後端服務
-*   **Database**: Firebase Firestore (4-Collection Normalized Schema)
+*   **Database**: Firebase Firestore (5-Collection Normalized Schema)
 *   **Deployment**: Vercel
 
 ### 環境變數設定 (.env)

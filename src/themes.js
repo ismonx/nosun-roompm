@@ -12,10 +12,10 @@ export const THEMES = {
     light: {
       bg: '#F4F1EA',
       bgCard: '#EBE8E0',
-      text: '#2C3632',
-      textMuted: '#5A6B60',
-      accent: '#8A9A5B',
-      accentHover: '#7A8A4B',
+      text: '#111816', // Near-black with forest tint (contrast 14:1)
+      textMuted: '#3A4A40', // Dark forest gray (contrast 7:1)
+      accent: '#5F7A3A', // Darkened olive for better text contrast
+      accentHover: '#4F6A2A', // Darker hover
       border: '#C8C3B8',
       borderLight: '#DDD9D0',
     },
@@ -38,10 +38,10 @@ export const THEMES = {
     light: {
       bg: '#F0F4F8',
       bgCard: '#E6ECF2',
-      text: '#334155',
-      textMuted: '#64748B',
-      accent: '#5B8FB9',
-      accentHover: '#4B7FA9',
+      text: '#0F172A', // Near-black slate (contrast 15:1)
+      textMuted: '#334155', // Dark slate (contrast 7.5:1)
+      accent: '#3B7BAA', // Darkened blue for better readability
+      accentHover: '#2B6B9A', // Darker hover
       border: '#CBD5E1',
       borderLight: '#E2E8F0',
     },
@@ -64,10 +64,10 @@ export const THEMES = {
     light: {
       bg: '#FFF8F0',
       bgCard: '#F5EDE4',
-      text: '#3D2E1F',
-      textMuted: '#7A6B5A',
-      accent: '#C87941',
-      accentHover: '#B86931',
+      text: '#1A1008', // Near-black warm (contrast 16:1)
+      textMuted: '#4A3828', // Dark warm brown (contrast 7:1)
+      accent: '#B56A30', // Slightly deeper terracotta
+      accentHover: '#A05A20', // Darker hover
       border: '#D4C4B0',
       borderLight: '#E8DDD0',
     },

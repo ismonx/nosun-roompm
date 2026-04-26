@@ -5,7 +5,8 @@ import { db } from './firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import {
   Calendar, ArrowRight, X, ChevronLeft, ChevronRight,
-  Users, Phone, CheckCircle2, Info, ArrowLeft, Plus, Minus, Sun, Moon, Sparkles
+  Users, Phone, CheckCircle2, Info, ArrowLeft, Plus, Minus, Sun, Moon, Sparkles,
+  Languages
 } from 'lucide-react';
 
 const RoomBookingFrontEnd = () => {
@@ -13,7 +14,12 @@ const RoomBookingFrontEnd = () => {
     lang, setLang, t, settings, rooms, bookings,
     getSmartPrice, getPromoInfo, checkAvailability,
     isDark, toggleDark, saveBooking,
+    partnershipCode, setPartnershipCode, validateCode, discountRate,
   } = useApp();
+
+  const [codeInput, setCodeInput] = useState('');
+  const [codeStatus, setCodeStatus] = useState(null); // 'valid' | 'invalid' | null
+  const [showCodeInput, setShowCodeInput] = useState(false);
 
   const [step, setStep] = useState(1);
   const [dates, setDates] = useState({ checkIn: '', checkOut: '' });
@@ -68,8 +74,9 @@ const RoomBookingFrontEnd = () => {
     if (!selectedRoomId || !dates.checkIn) return 0;
     const base = getSmartPrice(selectedRoomId, dates.checkIn);
     const extraFee = currentRoom?.extra_guest_fee || 500;
-    return (base + (extraGuests * extraFee)) * nightCount;
-  }, [selectedRoomId, dates.checkIn, extraGuests, nightCount, getSmartPrice, currentRoom]);
+    const subtotal = (base + (extraGuests * extraFee)) * nightCount;
+    return Math.round(subtotal * discountRate);
+  }, [selectedRoomId, dates.checkIn, extraGuests, nightCount, getSmartPrice, currentRoom, discountRate]);
 
   // ===== 鎖房 =====
   const handleBooking = async () => {
@@ -132,21 +139,29 @@ const RoomBookingFrontEnd = () => {
 
         // 檢查所有房型是否都已售罄
         const allSoldOut = rooms.length > 0 && rooms.every(r => !checkAvailability(iso, r.id));
+        // 計算剩餘可用房數
+        const remainingRooms = rooms.filter(r => checkAvailability(iso, r.id)).length;
 
         days.push(
           <button
             key={iso}
             disabled={isPast || allSoldOut}
             onClick={() => { setDates(prev => ({ ...prev, [selectingType]: iso })); setIsDatePickerOpen(false); }}
-            className={`aspect-square flex flex-col items-center justify-center rounded-pms text-xs font-medium transition-all
-              ${isSelected ? 'bg-pms-accent text-white font-bold scale-95' : 'hover:bg-pms-accent/15'}
-              ${isToday && !isSelected ? 'calendar-today font-bold text-pms-accent' : ''}
+            className={`aspect-square flex flex-col items-center justify-center rounded-pms text-xs font-medium transition-all relative
+              ${isSelected ? 'bg-pms-accent text-white font-bold scale-95 ring-2 ring-pms-accent ring-offset-1' : 'hover:bg-pms-accent/15'}
+              ${isToday && !isSelected ? 'border-[3px] border-black dark:border-white font-extrabold text-pms-accent' : ''}
               ${isPast ? 'opacity-20 pointer-events-none' : ''}
-              ${allSoldOut && !isPast ? 'calendar-sold-out' : ''}
+              ${remainingRooms === 0 && !isPast ? 'line-through text-gray-400 opacity-50' : ''}
               ${!isPast && !allSoldOut && !isSelected ? 'text-pms-text' : ''}
             `}
+            style={remainingRooms === 0 && !isPast ? {
+              backgroundImage: 'repeating-linear-gradient(135deg, transparent, transparent 3px, rgba(156,163,175,0.15) 3px, rgba(156,163,175,0.15) 5px)'
+            } : undefined}
           >
             {d}
+            {remainingRooms > 0 && remainingRooms <= 2 && !isPast && !isSelected && (
+              <span className="absolute bottom-0.5 text-[7px] text-orange-500 font-bold">剩{remainingRooms}</span>
+            )}
           </button>
         );
       }
@@ -209,7 +224,12 @@ const RoomBookingFrontEnd = () => {
         <div className="flex items-center gap-3">
           {step > 1 && step < 4 && <button onClick={() => setStep(step - 1)} className="p-1 text-pms-text"><ArrowLeft size={18} /></button>}
           <div>
-            <h1 className="font-heading text-lg font-bold text-pms-accent leading-tight">{settings.hostel_name || '防曬不要擦太多民宿'}</h1>
+            <h1 className="font-heading text-lg font-bold text-pms-accent leading-tight">
+              {settings.hostel_name || '防曬不要擦太多民宿'}
+              <span className="block text-[10px] opacity-80 font-medium tracking-normal mt-0.5">
+                {settings.hostel_name_en || 'Sunscreen Resort'}
+              </span>
+            </h1>
             <p className="text-[8px] font-bold text-pms-text-muted uppercase tracking-[0.2em]">{t(`step${step}`)}</p>
           </div>
         </div>
@@ -218,8 +238,9 @@ const RoomBookingFrontEnd = () => {
             {isDark ? <Sun size={14} /> : <Moon size={14} />}
           </button>
           <button onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}
-            className="text-[10px] font-bold px-3 py-1.5 rounded-pms border border-pms-border hover:bg-pms-accent hover:text-white transition-all text-pms-text">
-            🌐 {lang === 'zh' ? 'EN' : 'ZH'}
+            className="flex items-center gap-1.5 text-[10px] font-bold px-3 py-1.5 rounded-pms border border-pms-border hover:bg-pms-accent hover:text-white transition-all text-pms-text group">
+            <Languages size={14} className="group-hover:scale-110 transition-transform" />
+            <span>{lang === 'zh' ? 'EN' : 'ZH'}</span>
           </button>
         </div>
       </nav>
@@ -254,11 +275,11 @@ const RoomBookingFrontEnd = () => {
                   >
                     <div className="text-left">
                       <p className="text-[9px] uppercase font-bold text-pms-text-muted mb-1.5 tracking-widest">{t(type)}</p>
-                      <p className={`text-lg font-bold ${!dates[type] ? 'text-pms-text-muted opacity-50' : 'text-pms-text'}`}>
+                      <p className={`text-lg font-bold ${!dates[type] ? 'text-pms-text-muted opacity-70' : 'text-pms-text'}`}>
                         {dates[type] || getDatePlaceholder(type)}
                       </p>
                     </div>
-                    <Calendar className={dates[type] ? 'text-pms-accent' : 'text-pms-text-muted opacity-30'} size={20} />
+                    <Calendar className={dates[type] ? 'text-pms-accent' : 'text-pms-text-muted opacity-60'} size={20} />
                   </button>
                 ))}
               </div>
@@ -295,7 +316,7 @@ const RoomBookingFrontEnd = () => {
               <button
                 disabled={!dates.checkIn || !dates.checkOut || isSoldOut}
                 onClick={() => setStep(2)}
-                className="w-full bg-pms-accent text-white font-bold py-5 rounded-pms text-lg active:scale-[0.98] disabled:opacity-20 transition-all shadow-glow flex items-center justify-center gap-2 group"
+                className="w-full bg-pms-accent text-white font-bold py-5 rounded-pms text-lg active:scale-[0.98] disabled:opacity-50 transition-all shadow-glow flex items-center justify-center gap-2 group"
               >
                 {lang === 'zh' ? '選擇房型' : 'CHOOSE ROOM'} 
                 <ArrowRight className="group-hover:translate-x-1 transition-transform" size={20} />
@@ -379,7 +400,7 @@ const RoomBookingFrontEnd = () => {
             <button
               disabled={!selectedRoomId}
               onClick={() => setStep(3)}
-              className="w-full bg-pms-accent text-white font-bold py-5 rounded-pms text-lg active:scale-[0.98] disabled:opacity-20 transition-all shadow-glow"
+              className="w-full bg-pms-accent text-white font-bold py-5 rounded-pms text-lg active:scale-[0.98] disabled:opacity-50 transition-all shadow-glow"
             >
               {lang === 'zh' ? '繼續填寫' : 'CONTINUE'} <ArrowRight className="inline ml-2" size={20} />
             </button>
@@ -419,9 +440,9 @@ const RoomBookingFrontEnd = () => {
                     type={field.type} placeholder={t(field.key)} required
                     value={guestInfo[field.key]}
                     onChange={e => setGuestInfo({ ...guestInfo, [field.key]: e.target.value })}
-                    className="w-full bg-pms-bg-card p-4 pl-12 rounded-pms border border-pms-border-light font-bold text-sm focus:border-pms-accent outline-none text-pms-text placeholder:text-pms-text-muted/40 transition-all focus:shadow-md"
+                    className="w-full bg-pms-bg-card p-4 pl-12 rounded-pms border border-pms-border-light font-bold text-sm focus:border-pms-accent outline-none text-pms-text placeholder:text-pms-text-muted/70 transition-all focus:shadow-md"
                   />
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-pms-text-muted opacity-30 group-focus-within:opacity-100 group-focus-within:text-pms-accent transition-all">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-pms-text-muted opacity-60 group-focus-within:opacity-100 group-focus-within:text-pms-accent transition-all">
                     {field.icon}
                   </div>
                 </div>
@@ -430,14 +451,14 @@ const RoomBookingFrontEnd = () => {
                 placeholder={t('note')}
                 value={guestInfo.note}
                 onChange={e => setGuestInfo({ ...guestInfo, note: e.target.value })}
-                className="w-full bg-pms-bg-card p-4 rounded-pms border border-pms-border-light font-medium text-sm h-24 focus:border-pms-accent outline-none text-pms-text resize-none placeholder:text-pms-text-muted/40 transition-all focus:shadow-md"
+                className="w-full bg-pms-bg-card p-4 rounded-pms border border-pms-border-light font-medium text-sm h-24 focus:border-pms-accent outline-none text-pms-text resize-none placeholder:text-pms-text-muted/70 transition-all focus:shadow-md"
               />
             </div>
 
             <button
               disabled={!guestInfo.name || !guestInfo.phone}
               onClick={handleBooking}
-              className="w-full bg-pms-accent text-white font-bold py-5 rounded-pms text-lg active:scale-[0.98] disabled:opacity-20 transition-all shadow-glow"
+              className="w-full bg-pms-accent text-white font-bold py-5 rounded-pms text-lg active:scale-[0.98] disabled:opacity-50 transition-all shadow-glow"
             >
               {t('bookingBtn')}
             </button>
@@ -491,7 +512,7 @@ const RoomBookingFrontEnd = () => {
               </a>
               <button
                 onClick={() => { setStep(1); setDates({ checkIn: '', checkOut: '' }); setSelectedRoomId(null); }}
-                className="text-pms-text-muted font-bold text-[10px] uppercase tracking-widest opacity-40 hover:opacity-100 transition-all pt-4"
+                className="text-pms-text-muted font-bold text-[10px] uppercase tracking-widest opacity-70 hover:opacity-100 transition-all pt-4"
               >
                 ← Back to Start
               </button>
@@ -501,8 +522,84 @@ const RoomBookingFrontEnd = () => {
       </AnimatePresence>
       </main>
 
+      {/* ===== 底部懸浮優惠碼列 (Persistent Bottom Action Bar) ===== */}
+      {step >= 2 && step <= 3 && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-pms-border bg-pms-bg/95 backdrop-blur-md px-4 py-3 safe-area-bottom">
+          <div className="max-w-xl mx-auto flex items-center justify-between gap-3">
+            {/* 左側：優惠碼 */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {/* 手機版：收納式小連結 */}
+              <div className="md:hidden">
+                {!showCodeInput ? (
+                  <button
+                    onClick={() => setShowCodeInput(true)}
+                    className="text-[10px] text-pms-text-muted underline underline-offset-2 opacity-80 hover:opacity-100 transition-all"
+                  >
+                    我有優惠代碼？
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-1.5 animate-in">
+                    <input
+                      value={codeInput}
+                      onChange={e => setCodeInput(e.target.value.toUpperCase())}
+                      placeholder="輸入代碼"
+                      className="text-[10px] border border-pms-border rounded-md px-2 py-1 w-24 bg-pms-bg-card text-pms-text focus:border-pms-accent outline-none"
+                    />
+                    <button
+                      onClick={() => {
+                        const ok = validateCode(codeInput);
+                        setCodeStatus(ok ? 'valid' : 'invalid');
+                        setTimeout(() => { if (!ok) setCodeStatus(null); }, 2000);
+                      }}
+                      className="text-[10px] bg-pms-text text-pms-bg px-2.5 py-1 rounded-md font-bold"
+                    >
+                      套用
+                    </button>
+                    <button onClick={() => { setShowCodeInput(false); setCodeStatus(null); }} className="text-pms-text-muted">
+                      <X size={12} />
+                    </button>
+                  </div>
+                )}
+              </div>
+              {/* 電腦版：直接顯示 */}
+              <div className="hidden md:flex items-center gap-2 border-r border-pms-border-light pr-4">
+                <input
+                  value={codeInput}
+                  onChange={e => setCodeInput(e.target.value.toUpperCase())}
+                  placeholder="航空公司優惠碼"
+                  className="text-xs border border-pms-border rounded-md px-2.5 py-1.5 w-36 bg-pms-bg-card text-pms-text focus:border-pms-accent outline-none focus:ring-1 ring-pms-accent/30"
+                />
+                <button
+                  onClick={() => {
+                    const ok = validateCode(codeInput);
+                    setCodeStatus(ok ? 'valid' : 'invalid');
+                    setTimeout(() => { if (!ok) setCodeStatus(null); }, 2000);
+                  }}
+                  className="text-xs bg-pms-text text-pms-bg px-3 py-1.5 rounded-md font-bold hover:bg-pms-accent transition-colors"
+                >
+                  套用
+                </button>
+              </div>
+              {/* 狀態反饋 */}
+              {codeStatus === 'valid' && <span className="text-[10px] text-green-500 font-bold">✓ {Math.round((1 - discountRate) * 100)}% OFF</span>}
+              {codeStatus === 'invalid' && <span className="text-[10px] text-red-400 font-bold">✗ 無效代碼</span>}
+            </div>
+
+            {/* 右側：金額摘要 */}
+            <div className="text-right">
+              {discountRate < 1 && (
+                <p className="text-[9px] text-green-500 font-bold">已套用 {Math.round((1 - discountRate) * 100)}% 折扣</p>
+              )}
+              <p className="text-lg font-bold text-pms-accent">
+                NT$ {totalBill.toLocaleString()}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <footer className="mt-16 text-center py-8 border-t border-pms-border-light max-w-xs mx-auto">
-        <p className="text-[9px] font-bold text-pms-text-muted opacity-30 uppercase tracking-[0.3em] leading-relaxed">
+        <p className="text-[9px] font-bold text-pms-text-muted opacity-50 uppercase tracking-[0.3em] leading-relaxed">
           © 2026 FU-HOSTEL · PMS V6.0<br />DESIGNED BY AH-ZHI ARCHITECTURE
         </p>
       </footer>
@@ -510,4 +607,12 @@ const RoomBookingFrontEnd = () => {
   );
 };
 
+
+/**
+ * FUTURE PLAN: Multi-language Support
+ * 1. Target Languages: Japanese (JP), Korean (KR), Spanish (ES).
+ * 2. Solution: Integrate i18next or a cloud translation API (Google Cloud Translation / DeepL) 
+ *    to handle dynamic content like room descriptions and system messages.
+ * 3. Architecture: Move dictionary from AppContext.jsx to standalone JSON files for better scalability.
+ */
 export default RoomBookingFrontEnd;

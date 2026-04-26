@@ -9,6 +9,7 @@ const AppContext = createContext();
 const DEFAULT_SETTINGS = {
   vendor_id: 'ismonx_primary',
   hostel_name: '防曬不要擦太多民宿',
+  hostel_name_en: 'Sunscreen Resort',
   home_title_zh: '防曬不要擦太多',
   home_title_en: 'Back to Natural Rhythm',
   home_subtitle_zh: '2026 恆春半島最溫暖的預訂門戶',
@@ -50,7 +51,13 @@ const DEFAULT_ROOMS = [
 ];
 
 export const AppProvider = ({ children }) => {
-  const [lang, setLang] = useState(localStorage.getItem('fu_lang') || 'zh');
+  const [lang, setLang] = useState(() => {
+    const saved = localStorage.getItem('fu_lang');
+    if (saved) return saved;
+    // 自動偵測語系：若瀏覽器語言不是 zh- 開頭，預設為 en
+    const browserLang = navigator.language || navigator.userLanguage;
+    return browserLang.startsWith('zh') ? 'zh' : 'en';
+  });
   const [isDark, setIsDark] = useState(() => {
     const saved = localStorage.getItem('fu_dark');
     if (saved !== null) return saved === 'true';
@@ -61,6 +68,27 @@ export const AppProvider = ({ children }) => {
   const [rooms, setRooms] = useState([]);
   const [pricingRules, setPricingRules] = useState([]);
   const [bookings, setBookings] = useState({});
+  const [promoCodes, setPromoCodes] = useState([]);
+
+  // ===== 航空公司優惠碼系統 =====
+  const [partnershipCode, setPartnershipCode] = useState('');
+  const [discountRate, setDiscountRate] = useState(1); // 1 = 不打折
+
+  const validateCode = useCallback((code) => {
+    const trimmed = (code || '').trim().toUpperCase();
+    const match = promoCodes.find(p => p.code === trimmed);
+    
+    if (match) {
+      // 檢查有效期 (若有設定)
+      if (match.expiry_date && new Date(match.expiry_date) < new Date()) {
+        return false;
+      }
+      setPartnershipCode(trimmed);
+      setDiscountRate(match.discount || 1);
+      return true;
+    }
+    return false;
+  }, [promoCodes]);
 
   // ===== 主題引擎 =====
   useEffect(() => {
@@ -123,6 +151,16 @@ export const AppProvider = ({ children }) => {
       const data = {};
       snap.forEach(d => { data[d.id] = { id: d.id, ...d.data() }; });
       setBookings(data);
+    });
+    return () => unsub();
+  }, []);
+
+  // ===== 5. Sync promo_codes collection =====
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'promo_codes'), (snap) => {
+      const data = [];
+      snap.forEach(d => data.push({ id: d.id, ...d.data() }));
+      setPromoCodes(data);
     });
     return () => unsub();
   }, []);
@@ -254,6 +292,22 @@ export const AppProvider = ({ children }) => {
     await deleteDoc(doc(db, 'bookings', bookingId));
   }, []);
 
+  // ===== CRUD: Promo Codes =====
+  const addPromoCode = useCallback(async (data) => {
+    await addDoc(collection(db, 'promo_codes'), {
+      ...data,
+      created_at: new Date().toISOString()
+    });
+  }, []);
+
+  const updatePromoCode = useCallback(async (id, data) => {
+    await updateDoc(doc(db, 'promo_codes', id), data);
+  }, []);
+
+  const deletePromoCode = useCallback(async (id) => {
+    await deleteDoc(doc(db, 'promo_codes', id));
+  }, []);
+
   // ===== 翻譯 =====
   const t = useCallback((key) => {
     const dict = {
@@ -285,7 +339,9 @@ export const AppProvider = ({ children }) => {
     rooms, addRoom, updateRoom, deleteRoom,
     pricingRules, addPricingRule, updatePricingRule, deletePricingRule,
     bookings, saveBooking, deleteBooking,
+    promoCodes, addPromoCode, updatePromoCode, deletePromoCode,
     getSmartPrice, getPromoInfo, checkAvailability,
+    partnershipCode, setPartnershipCode, validateCode, discountRate,
     THEMES,
   }), [
     lang, t, isDark, toggleDark,
@@ -293,7 +349,9 @@ export const AppProvider = ({ children }) => {
     rooms, addRoom, updateRoom, deleteRoom,
     pricingRules, addPricingRule, updatePricingRule, deletePricingRule,
     bookings, saveBooking, deleteBooking,
+    promoCodes, addPromoCode, updatePromoCode, deletePromoCode,
     getSmartPrice, getPromoInfo, checkAvailability,
+    partnershipCode, validateCode, discountRate,
   ]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

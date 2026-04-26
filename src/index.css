@@ -7,10 +7,10 @@
   /* Default: Midnight Forest Light */
   --pms-bg: #F4F1EA;
   --pms-bg-card: #EBE8E0;
-  --pms-text: #2C3632;
-  --pms-text-muted: #5A6B60;
-  --pms-accent: #8A9A5B;
-  --pms-accent-hover: #7A8A4B;
+  --pms-text: #111816;
+  --pms-text-muted: #3A4A40;
+  --pms-accent: #5F7A3A;
+  --pms-accent-hover: #4F6A2A;
   --pms-border: #C8C3B8;
   --pms-border-light: #DDD9D0;
   --pms-font-heading: 'Noto Serif TC', 'Songti SC', serif;
