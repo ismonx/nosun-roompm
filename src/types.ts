@@ -1,6 +1,6 @@
 // PMS V6.0 Core Types
 
-export type RoomCategory = 'double' | 'quad' | 'suite' | 'dorm' | 'whole';
+export type RoomCategory = 'double' | 'quad' | 'suite' | 'dorm' | 'whole_house';
 
 export interface Room {
   id: string;

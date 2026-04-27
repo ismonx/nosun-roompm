@@ -88,7 +88,7 @@ const RoomBookingFrontEnd: React.FC<{ onAdminLogin: () => void }> = ({ onAdminLo
         date: dates.checkIn,
         extra_guests: extraGuests,
         total_price: totalBill,
-        is_whole_house: false,
+        is_whole_house: selectedRoomId === 'whole_house',
         created_at: new Date().toISOString(),
       });
       setStep(4);
