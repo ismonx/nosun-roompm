@@ -16,9 +16,9 @@ interface CalendarViewProps {
 // ===== 週視圖格子 =====
 const WeekCell: React.FC<{ date: string, room: Room, booking?: Booking, onClick: (date: string, roomId: string) => void, isToday: boolean, isPast: boolean }> = React.memo(({ date, room, booking, onClick, isToday, isPast }) => {
   const statusColors = {
-    pending: 'bg-status-pending/90 text-white',
-    deposit: 'bg-status-deposit/90 text-white',
-    full: 'bg-status-full/90 text-white',
+    pending: 'bg-status-pending text-[var(--pms-bg)]',
+    deposit: 'bg-status-deposit text-white',
+    full: 'bg-status-full text-white',
   };
 
   return (
@@ -70,15 +70,15 @@ const MonthCell: React.FC<{ date: string, rooms: Room[], bookings: Record<string
       </div>
       <div className="flex flex-col gap-0.5">
         {dayBookings.map(({ room, booking }) => (
-          <div key={room.id} className={`text-[8px] rounded px-1 py-0.5 truncate font-medium
+          <div key={room.id} className={`text-[10px] rounded px-1 py-0.5 truncate font-bold
             ${booking
               ? booking.status === 'pending' ? 'bg-status-pending/20 text-status-pending'
               : booking.status === 'deposit' ? 'bg-status-deposit/20 text-status-deposit'
               : 'bg-status-full/20 text-status-full'
-              : ''
+              : 'text-pms-text/30'
             }
           `}>
-            {booking ? (booking.customer_name || '---') : ''}
+            {booking ? (booking.customer_name || '---') : '空'}
           </div>
         ))}
       </div>
@@ -128,7 +128,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ activeTab, setActiveTab, we
     <div className="space-y-3">
       {activeTab === 'week' ? (
         <div className="space-y-3">
-          <header className="flex items-center justify-between flex-wrap gap-2">
+          <header className="flex items-center justify-between flex-wrap gap-2 min-h-[44px]">
             <div className="flex items-center gap-1.5">
               <div className="flex border border-pms-border rounded-pms overflow-hidden">
                 <button onClick={() => setActiveTab('week')} className="px-2.5 py-1.5 text-[11px] font-bold bg-pms-accent text-[var(--pms-text-on-accent)]">週</button>
@@ -146,12 +146,12 @@ const CalendarView: React.FC<CalendarViewProps> = ({ activeTab, setActiveTab, we
                 const d = new Date(weekStart);
                 d.setDate(d.getDate() - 7);
                 setWeekStart(d.toISOString().split('T')[0]);
-              }} className="p-1.5 rounded-pms border border-pms-border hover:bg-pms-accent/10"><ChevronLeft size={14} /></button>
+              }} className="p-1.5 rounded-pms border border-pms-border hover:bg-pms-accent/10 flex items-center justify-center"><ChevronLeft size={14} /></button>
               <button aria-label="下週" onClick={() => {
                 const d = new Date(weekStart);
                 d.setDate(d.getDate() + 7);
                 setWeekStart(d.toISOString().split('T')[0]);
-              }} className="p-1.5 rounded-pms border border-pms-border hover:bg-pms-accent/10"><ChevronRight size={14} /></button>
+              }} className="p-1.5 rounded-pms border border-pms-border hover:bg-pms-accent/10 flex items-center justify-center"><ChevronRight size={14} /></button>
               <span className="text-xs font-bold text-pms-text ml-1">{weekDays[0]} ~ {weekDays[6]}</span>
             </div>
           </header>
@@ -192,11 +192,11 @@ const CalendarView: React.FC<CalendarViewProps> = ({ activeTab, setActiveTab, we
                   {/* Row 1: Days 0-3 */}
                   <div className="p-2 bg-pms-accent/5 border-b border-r border-pms-border-light text-[10px] font-bold text-pms-accent sticky-col flex flex-col justify-center">
                     <span className="truncate">{lang === 'zh' ? room.name_zh : room.name_en}</span>
-                    <span className="text-[8px] opacity-60">1/2</span>
+                    <span className="text-[10px] font-bold text-pms-accent/60">1/2</span>
                   </div>
                   {weekDays.slice(0, 4).map(d => (
                     <div key={`${d}_${room.id}_1`} className={`p-1 border-b border-r border-pms-border-light ${wholeHouseDates[d] ? 'bg-indigo-50/30' : ''}`}>
-                      <div className="text-[8px] font-bold mb-1 opacity-50">{d.split('-').slice(2)}</div>
+                      <div className="text-[10px] font-bold mb-1 text-pms-text-muted">{d.split('-').slice(2)}</div>
                       <WeekCell date={d} room={room} booking={bookings[`${d}_${room.id}`]} onClick={onSelectCell} isToday={d === today} isPast={d < today} />
                     </div>
                   ))}
@@ -204,11 +204,11 @@ const CalendarView: React.FC<CalendarViewProps> = ({ activeTab, setActiveTab, we
                   {/* Row 2: Days 4-6 */}
                   <div className="p-2 bg-pms-accent/5 border-b border-r border-pms-border-light text-[10px] font-bold text-pms-accent sticky-col flex flex-col justify-center mb-[5px]">
                     <span className="truncate opacity-40">{lang === 'zh' ? room.name_zh : room.name_en}</span>
-                    <span className="text-[8px] opacity-60">2/2</span>
+                    <span className="text-[10px] font-bold text-pms-accent/60">2/2</span>
                   </div>
                   {weekDays.slice(4, 7).map(d => (
                     <div key={`${d}_${room.id}_2`} className={`p-1 border-b border-r border-pms-border-light mb-[5px] ${wholeHouseDates[d] ? 'bg-indigo-50/30' : ''}`}>
-                      <div className="text-[8px] font-bold mb-1 opacity-50">{d.split('-').slice(2)}</div>
+                      <div className="text-[10px] font-bold mb-1 text-pms-text-muted">{d.split('-').slice(2)}</div>
                       <WeekCell date={d} room={room} booking={bookings[`${d}_${room.id}`]} onClick={onSelectCell} isToday={d === today} isPast={d < today} />
                     </div>
                   ))}
@@ -220,16 +220,16 @@ const CalendarView: React.FC<CalendarViewProps> = ({ activeTab, setActiveTab, we
         </div>
       ) : (
         <div className="space-y-3">
-          <header className="flex items-center justify-between flex-wrap gap-2">
+          <header className="flex items-center justify-between flex-wrap gap-2 min-h-[44px]">
             <div className="flex items-center gap-1.5">
               <div className="flex border border-pms-border rounded-pms overflow-hidden">
                 <button onClick={() => setActiveTab('week')} className="px-2.5 py-1.5 text-[11px] font-bold text-pms-text-muted hover:bg-pms-accent/10 border-r border-pms-border">週</button>
                 <button onClick={() => setActiveTab('month')} className="px-2.5 py-1.5 text-[11px] font-bold bg-pms-accent text-[var(--pms-text-on-accent)]">月</button>
               </div>
               <button onClick={() => setMonthDate(new Date())} className="px-2.5 py-1.5 rounded-pms border border-pms-border text-[11px] font-bold hover:bg-pms-accent/10">Today</button>
-              <button aria-label="上個月" onClick={() => setMonthDate(new Date(monthDate.getFullYear(), monthDate.getMonth() - 1))} className="p-1.5 rounded-pms border border-pms-border hover:bg-pms-accent/10"><ChevronLeft size={14} /></button>
+              <button aria-label="上個月" onClick={() => setMonthDate(new Date(monthDate.getFullYear(), monthDate.getMonth() - 1))} className="p-1.5 rounded-pms border border-pms-border hover:bg-pms-accent/10 flex items-center justify-center"><ChevronLeft size={14} /></button>
               <span className="text-xs font-bold text-pms-text">{monthDate.getFullYear()} / {monthDate.getMonth() + 1}</span>
-              <button aria-label="下個月" onClick={() => setMonthDate(new Date(monthDate.getFullYear(), monthDate.getMonth() + 1))} className="p-1.5 rounded-pms border border-pms-border hover:bg-pms-accent/10"><ChevronRight size={14} /></button>
+              <button aria-label="下個月" onClick={() => setMonthDate(new Date(monthDate.getFullYear(), monthDate.getMonth() + 1))} className="p-1.5 rounded-pms border border-pms-border hover:bg-pms-accent/10 flex items-center justify-center"><ChevronRight size={14} /></button>
             </div>
           </header>
           <div className="grid grid-cols-7 gap-1 w-full max-w-full overflow-hidden">
