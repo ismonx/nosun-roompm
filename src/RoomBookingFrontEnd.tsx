@@ -249,7 +249,9 @@ const RoomBookingFrontEnd: React.FC<{ onAdminLogin: () => void }> = ({ onAdminLo
                           <img src={room.photos[0]} alt={room.name_zh} className="w-full h-40 object-cover" />
                         ) : (
                           <div className="bg-pms-bg-card flex items-center justify-center h-40 border-b border-pms-border-light">
-                            <span className="text-[10px] font-bold text-pms-text-muted italic">防曬不要擦太多 - 12人包棟建置中</span>
+                            <span className="text-[10px] font-bold text-pms-text-muted italic">
+                              {lang === 'zh' ? room.name_zh : room.name_en} - 建置中
+                            </span>
                           </div>
                         )}
                         <div className="p-5 flex justify-between items-start">
