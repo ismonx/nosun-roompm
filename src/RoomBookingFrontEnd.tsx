@@ -328,6 +328,17 @@ const RoomBookingFrontEnd: React.FC<{ onAdminLogin: () => void }> = ({ onAdminLo
           </div>
         </div>
       )}
+
+      {step === 1 && (
+        <footer className="mt-12 py-8 text-center opacity-40 hover:opacity-100 transition-opacity">
+          <button 
+            onClick={onAdminLogin}
+            className="text-[10px] font-bold text-pms-text-muted hover:text-pms-accent uppercase tracking-[0.2em] transition-all"
+          >
+            — Management Login —
+          </button>
+        </footer>
+      )}
     </div>
   );
 };
