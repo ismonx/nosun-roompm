@@ -180,11 +180,11 @@ const RoomBookingFrontEnd: React.FC<{ onAdminLogin: () => void }> = ({ onAdminLo
         <div className="flex items-center gap-3">
           {step > 1 && step < 4 && <button aria-label="返回上一步" onClick={() => setStep(step - 1)} className="p-1 text-pms-text"><ArrowLeft size={18} /></button>}
           <div onClick={(e) => e.detail === 3 && onAdminLogin()}>
-            <h1 className="font-heading text-lg font-bold text-pms-accent leading-tight">
+            <h1 className="font-heading text-lg font-bold text-pms-text leading-tight">
               {settings.hostel_name || '防曬不要擦太多民宿'}
-              <span className="block text-[10px] opacity-80 font-medium tracking-normal mt-0.5">{settings.hostel_name_en}</span>
+              <span className="block text-[10px] text-pms-text-muted font-medium tracking-normal mt-0.5">{settings.hostel_name_en}</span>
             </h1>
-            <p className="text-[8px] font-bold text-pms-text-muted uppercase tracking-[0.2em]">
+            <p className="text-[8px] font-bold text-pms-text uppercase tracking-[0.2em]">
               {step === 1 ? (settings[`step1_text_${lang as 'zh'|'en'}`] || t('step1')) : t(`step${step}`)}
             </p>
           </div>
@@ -193,7 +193,7 @@ const RoomBookingFrontEnd: React.FC<{ onAdminLogin: () => void }> = ({ onAdminLo
           <button aria-label="切換深淺模式" onClick={toggleDark} className="p-2 rounded-pms border border-pms-border text-pms-accent hover:bg-pms-accent/10 transition-all">
             {isDark ? <Sun size={14} /> : <Moon size={14} />}
           </button>
-          <button aria-label="切換語言" onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')} className="flex items-center gap-1.5 text-[10px] font-bold px-3 py-1.5 rounded-pms border border-pms-border hover:bg-pms-accent hover:text-[var(--pms-text-on-accent)] transition-all text-pms-text group">
+          <button aria-label={`切換語言至 ${lang === 'zh' ? '英文' : '中文'}`} onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')} className="flex items-center gap-1.5 text-[10px] font-bold px-3 py-1.5 rounded-pms border border-pms-border hover:bg-pms-accent hover:text-[var(--pms-text-on-accent)] transition-all text-pms-text group">
             <Languages size={14} /> <span>{lang === 'zh' ? 'EN' : 'ZH'}</span>
           </button>
         </div>
@@ -248,7 +248,7 @@ const RoomBookingFrontEnd: React.FC<{ onAdminLogin: () => void }> = ({ onAdminLo
                     <div key={room.id} className={!isAvailable ? 'opacity-30 grayscale pointer-events-none' : ''}>
                       <button disabled={!isAvailable} onClick={() => { setSelectedRoomId(room.id); setExtraGuests(0); }} className={`w-full rounded-pms border-2 text-left overflow-hidden transition-all ${isSelected ? 'border-pms-accent bg-pms-accent text-[var(--pms-text-on-accent)]' : 'border-pms-border-light bg-pms-bg-card'}`}>
                         {room.photos && room.photos.length > 0 ? (
-                          <img src={room.photos[0]} alt={room.name_zh} className="w-full h-40 object-cover" />
+                          <img src={room.photos[0]} alt={lang === 'zh' ? `${room.name_zh} 實景照片` : `${room.name_en} photo`} className="w-full h-40 object-cover" />
                         ) : (
                           <div className="bg-pms-bg-card flex items-center justify-center h-40 border-b border-pms-border-light">
                             <span className="text-[10px] font-bold text-pms-text-muted italic">
