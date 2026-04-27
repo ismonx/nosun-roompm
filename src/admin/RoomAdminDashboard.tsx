@@ -79,6 +79,8 @@ const RoomAdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =>
         <div className="bg-pms-bg-card p-10 rounded-pms border border-pms-border max-w-sm w-full space-y-6">
           <div className="flex justify-center"><div className="w-14 h-14 rounded-pms bg-pms-accent/20 flex items-center justify-center"><Settings size={24} className="text-pms-accent" /></div></div>
           <h1 className="font-heading text-xl font-bold text-pms-text text-center tracking-wide">{settings.login_title || 'fUX Center'}</h1>
+          <input type="password" placeholder="ENTER KEY" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()}
+            className={`w-full bg-pms-bg border p-4 rounded-pms text-center tracking-[0.4em] text-pms-text focus:border-pms-accent outline-none transition-all ${loginError ? 'border-red-500' : 'border-pms-border'}`} />
           <div className="flex items-center gap-2 px-1">
             <input 
               id="remember" 
