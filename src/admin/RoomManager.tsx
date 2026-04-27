@@ -110,12 +110,13 @@ const RoomManager: React.FC<RoomManagerProps> = ({ onConfirmDelete }) => {
               </div>
               <div>
                 <label className="text-[10px] font-bold text-pms-text-muted uppercase tracking-wider">類別</label>
-                <select value={roomForm.category || 'double'} onChange={e => setRoomForm({ ...roomForm, category: e.target.value })}
+                <select value={roomForm.category || 'double'} onChange={e => setRoomForm({ ...roomForm, category: e.target.value as any })}
                   className="w-full bg-pms-bg-card border border-pms-border rounded-pms p-3 text-sm font-bold text-pms-text outline-none mt-1">
                   <option value="double">雙人房</option>
                   <option value="quad">四人房</option>
                   <option value="suite">套房</option>
                   <option value="dorm">背包房</option>
+                  <option value="whole">全棟包棟</option>
                 </select>
               </div>
               <div>
