@@ -28,7 +28,10 @@ const ConfirmModal: React.FC<{ message: string, onConfirm: () => void, onCancel:
 const RoomAdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
   const { lang, t, settings, updateSettings, isDark, toggleDark, THEMES } = useApp();
 
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return localStorage.getItem('pms_auth') === 'true';
+  });
+  const [rememberMe, setRememberMe] = useState(true);
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState(false);
 
@@ -55,10 +58,19 @@ const RoomAdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =>
   const handleLogin = () => {
     if (loginPassword === (settings.admin_password || '2026')) {
       setIsAuthenticated(true);
+      if (rememberMe) {
+        localStorage.setItem('pms_auth', 'true');
+      }
     } else {
       setLoginError(true);
       setTimeout(() => setLoginError(false), 2000);
     }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('pms_auth');
+    setIsAuthenticated(false);
+    onLogout();
   };
 
   if (!isAuthenticated) {
@@ -67,9 +79,17 @@ const RoomAdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =>
         <div className="bg-pms-bg-card p-10 rounded-pms border border-pms-border max-w-sm w-full space-y-6">
           <div className="flex justify-center"><div className="w-14 h-14 rounded-pms bg-pms-accent/20 flex items-center justify-center"><Settings size={24} className="text-pms-accent" /></div></div>
           <h1 className="font-heading text-xl font-bold text-pms-text text-center tracking-wide">{settings.login_title || 'fUX Center'}</h1>
-          <input type="password" placeholder="ENTER KEY" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()}
-            className={`w-full bg-pms-bg border p-4 rounded-pms text-center tracking-[0.4em] text-pms-text focus:border-pms-accent outline-none transition-all ${loginError ? 'border-red-500' : 'border-pms-border'}`} />
-          <button onClick={handleLogin} className="w-full bg-pms-accent text-white font-bold py-4 rounded-pms text-sm hover:bg-pms-accent-hover transition-all">{lang === 'zh' ? '登入後台' : 'LOGIN'}</button>
+          <div className="flex items-center gap-2 px-1">
+            <input 
+              id="remember" 
+              type="checkbox" 
+              checked={rememberMe} 
+              onChange={e => setRememberMe(e.target.checked)}
+              className="accent-pms-accent"
+            />
+            <label htmlFor="remember" className="text-[10px] font-bold text-pms-text-muted cursor-pointer">記住登入狀態</label>
+          </div>
+          <button onClick={handleLogin} className="w-full bg-pms-accent text-[var(--pms-text-on-accent)] font-bold py-4 rounded-pms text-sm hover:bg-pms-accent-hover transition-all shadow-glow">{lang === 'zh' ? '登入後台' : 'LOGIN'}</button>
           {loginError && <p className="text-red-500 text-xs text-center font-bold">密碼錯誤</p>}
           <div className="flex justify-center"><button onClick={toggleDark} className="p-2 rounded-pms border border-pms-border text-pms-accent hover:bg-pms-accent/10">{isDark ? <Sun size={14} /> : <Moon size={14} />}</button></div>
           <p className="text-[10px] text-center text-pms-text-muted">PMS V6.0</p>
@@ -94,7 +114,7 @@ const RoomAdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =>
         <div className="flex items-center gap-3"><h1 className="font-heading text-sm font-bold text-pms-accent tracking-tight">FU·PMS</h1><span className="text-[8px] font-bold text-pms-text-muted">V6.0</span></div>
         <nav className="flex items-center gap-1">
           {tabs.map(tab => (
-            <button key={tab.id} onClick={() => handleTabChange(tab.id as any)} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-pms text-[11px] font-bold transition-all ${activeTab === tab.id ? 'bg-pms-accent text-white shadow-sm' : 'text-pms-text-muted hover:bg-pms-accent/10 hover:text-pms-text'}`}>
+            <button key={tab.id} onClick={() => handleTabChange(tab.id as any)} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-pms text-[11px] font-bold transition-all ${activeTab === tab.id ? 'bg-pms-accent text-[var(--pms-text-on-accent)] shadow-sm' : 'text-pms-text-muted hover:bg-pms-accent/10 hover:text-pms-text'}`}>
               {tab.icon} <span className="hidden sm:inline">{tab.label}</span>
             </button>
           ))}
@@ -102,13 +122,13 @@ const RoomAdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =>
         <div className="flex items-center gap-1.5">
           <div className="flex gap-0.5 border border-pms-border-light rounded-pms p-0.5">
             {Object.keys(THEMES).map(tid => (
-              <button key={tid} onClick={() => updateSettings({ active_theme: tid })} className={`px-1.5 py-1 text-[8px] font-bold rounded-pms transition-all ${settings.active_theme === tid ? 'bg-pms-accent text-white' : 'text-pms-text-muted hover:bg-pms-accent/10'}`}>
+              <button key={tid} onClick={() => updateSettings({ active_theme: tid })} className={`px-1.5 py-1 text-[8px] font-bold rounded-pms transition-all ${settings.active_theme === tid ? 'bg-pms-accent text-[var(--pms-text-on-accent)]' : 'text-pms-text-muted hover:bg-pms-accent/10'}`}>
                 {(THEMES as any)[tid].nameZh.substring(0, 2)}
               </button>
             ))}
           </div>
           <button onClick={toggleDark} className="p-1.5 rounded-pms text-pms-text-muted hover:text-pms-accent hover:bg-pms-accent/10"><Sun size={14} /></button>
-          <button onClick={onLogout} className="p-1.5 rounded-pms text-pms-text-muted hover:text-red-500"><LogOut size={14} /></button>
+          <button onClick={handleLogout} className="p-1.5 rounded-pms text-pms-text-muted hover:text-red-500"><LogOut size={14} /></button>
         </div>
       </header>
 

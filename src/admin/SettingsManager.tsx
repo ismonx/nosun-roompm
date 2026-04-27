@@ -30,15 +30,6 @@ const SettingsManager: React.FC<SettingsManagerProps> = ({ onConfirmDelete }) =>
     <div className="space-y-6 max-w-2xl">
       <div className="flex items-center justify-between">
         <h2 className="font-heading text-xl font-bold text-pms-text">全域設定</h2>
-        {hasChanges && (
-          <button
-            onClick={handleSaveSettings}
-            disabled={isSaving}
-            className="flex items-center gap-2 px-4 py-2 bg-pms-accent text-white rounded-pms text-xs font-bold hover:bg-pms-accent-hover transition-all shadow-glow"
-          >
-            <Save size={14} /> {isSaving ? '儲存中...' : '儲存所有設定'}
-          </button>
-        )}
       </div>
 
       {/* 文案設定 */}
@@ -90,7 +81,7 @@ const SettingsManager: React.FC<SettingsManagerProps> = ({ onConfirmDelete }) =>
       <div className="bg-pms-bg-card border border-pms-border-light rounded-pms p-5 space-y-4">
         <div className="flex justify-between items-center">
           <h3 className="font-bold text-sm text-pms-accent">推薦碼 / 合作夥伴</h3>
-          <button onClick={() => setEditingPromo('new')} className="flex items-center gap-1.5 px-3 py-1.5 bg-pms-accent text-white rounded-pms text-[10px] font-bold hover:bg-pms-accent-hover transition-all">
+          <button onClick={() => setEditingPromo('new')} className="flex items-center gap-1.5 px-3 py-1.5 bg-pms-accent text-[var(--pms-text-on-accent)] rounded-pms text-[10px] font-bold hover:bg-pms-accent-hover transition-all">
             <Plus size={12} /> 新增推薦碼
           </button>
         </div>
@@ -136,6 +127,21 @@ const SettingsManager: React.FC<SettingsManagerProps> = ({ onConfirmDelete }) =>
           }}
         />
       )}
+
+      {/* 固定底部儲存列 */}
+      {hasChanges && (
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-pms-bg/80 backdrop-blur-md border-t border-pms-border-light z-50 flex justify-center">
+          <button
+            onClick={handleSaveSettings}
+            disabled={isSaving}
+            className="flex items-center justify-center gap-2 px-10 py-4 bg-pms-accent text-[var(--pms-text-on-accent)] rounded-pms text-sm font-bold hover:bg-pms-accent-hover transition-all shadow-glow w-full max-w-sm"
+          >
+            <Save size={18} /> {isSaving ? '儲存中...' : '儲存所有變更'}
+          </button>
+        </div>
+      )}
+      {/* 為了防止底部被儲存列擋住的間隔 */}
+      <div className="h-20" />
     </div>
   );
 };
@@ -182,7 +188,7 @@ const PromoEditModal: React.FC<{ promo: any, onClose: () => void, onSave: (data:
           <button 
             disabled={!form.code || !form.name || isDuplicate}
             onClick={() => onSave(form)} 
-            className="w-full bg-pms-accent text-white font-bold py-3 rounded-pms hover:bg-pms-accent-hover active:scale-[0.98] disabled:opacity-50 transition-all text-sm flex items-center justify-center gap-2"
+            className="w-full bg-pms-accent text-[var(--pms-text-on-accent)] font-bold py-3 rounded-pms hover:bg-pms-accent-hover active:scale-[0.98] disabled:opacity-50 transition-all text-sm flex items-center justify-center gap-2"
           >
             {isDuplicate ? '代碼重複' : <><Save size={16} /> 儲存推薦碼</>}
           </button>

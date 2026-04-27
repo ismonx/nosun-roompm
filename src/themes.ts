@@ -119,6 +119,7 @@ export function applyTheme(themeId: ThemeId, isDark: boolean) {
   root.style.setProperty('--pms-accent-hover', mode.accentHover);
   root.style.setProperty('--pms-border', mode.border);
   root.style.setProperty('--pms-border-light', mode.borderLight);
+  root.style.setProperty('--pms-text-on-accent', isDark ? mode.bg : '#FFFFFF');
 
   const fontMap = {
     serif: '"Noto Serif TC", "Songti SC", serif',

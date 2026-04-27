@@ -16,6 +16,7 @@ interface AppContextType {
   addRoom: (roomData: Room) => Promise<string>;
   updateRoom: (roomId: string, newData: Partial<Room>) => Promise<void>;
   deleteRoom: (roomId: string) => Promise<void>;
+  updateRoomSortOrder: (newRooms: Room[]) => Promise<void>;
   pricingRules: PricingRule[];
   addPricingRule: (ruleData: Omit<PricingRule, 'id'>) => Promise<string>;
   updatePricingRule: (ruleId: string, newData: Partial<PricingRule>) => Promise<void>;
@@ -293,6 +294,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     await deleteDoc(doc(db, 'rooms', roomId));
   }, []);
 
+  const updateRoomSortOrder = useCallback(async (newRooms: Room[]) => {
+    try {
+      const promises = newRooms.map((room, index) => 
+        updateDoc(doc(db, 'rooms', room.id), { sort_order: index })
+      );
+      await Promise.all(promises);
+    } catch (e) {
+      console.error('Failed to update room sort order:', e);
+    }
+  }, []);
+
   const addPricingRule = useCallback(async (ruleData: Omit<PricingRule, 'id'>) => {
     const ref = await addDoc(collection(db, 'pricing_rules'), ruleData);
     return ref.id;
@@ -359,7 +371,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const value: AppContextType = useMemo(() => ({
     lang, setLang, t, isDark, toggleDark,
     settings, updateSettings,
-    rooms, addRoom, updateRoom, deleteRoom,
+    rooms, addRoom, updateRoom, deleteRoom, updateRoomSortOrder,
     pricingRules, addPricingRule, updatePricingRule, deletePricingRule,
     bookings, saveBooking, deleteBooking,
     promoCodes, addPromoCode, updatePromoCode, deletePromoCode,
@@ -369,7 +381,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }), [
     lang, t, isDark, toggleDark,
     settings, updateSettings,
-    rooms, addRoom, updateRoom, deleteRoom,
+    rooms, addRoom, updateRoom, deleteRoom, updateRoomSortOrder,
     pricingRules, addPricingRule, updatePricingRule, deletePricingRule,
     bookings, saveBooking, deleteBooking,
     promoCodes, addPromoCode, updatePromoCode, deletePromoCode,

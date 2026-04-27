@@ -8,7 +8,7 @@ interface RoomManagerProps {
 }
 
 const RoomManager: React.FC<RoomManagerProps> = ({ onConfirmDelete }) => {
-  const { lang, rooms, addRoom, updateRoom, deleteRoom } = useApp();
+  const { lang, rooms, addRoom, updateRoom, deleteRoom, updateRoomSortOrder } = useApp();
   const [editingRoom, setEditingRoom] = useState<string | null>(null);
   const [roomForm, setRoomForm] = useState<Partial<Room>>({});
 
@@ -37,18 +37,32 @@ const RoomManager: React.FC<RoomManagerProps> = ({ onConfirmDelete }) => {
     setEditingRoom(null);
   };
 
+  const moveRoom = async (index: number, direction: 'up' | 'down') => {
+    const newRooms = [...rooms];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= newRooms.length) return;
+    
+    // Swap
+    [newRooms[index], newRooms[targetIndex]] = [newRooms[targetIndex], newRooms[index]];
+    await updateRoomSortOrder(newRooms);
+  };
+
   return (
     <div className="space-y-4 max-w-4xl">
       <div className="flex items-center justify-between">
         <h2 className="font-heading text-xl font-bold text-pms-text">房型管理</h2>
-        <button onClick={() => setEditingRoom('new')} className="flex items-center gap-2 px-4 py-2 bg-pms-accent text-white rounded-pms text-xs font-bold hover:bg-pms-accent-hover transition-all">
+        <button onClick={() => setEditingRoom('new')} className="flex items-center gap-2 px-4 py-2 bg-pms-accent text-[var(--pms-text-on-accent)] rounded-pms text-xs font-bold hover:bg-pms-accent-hover transition-all shadow-glow">
           <Plus size={14} /> 新增房型
         </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {rooms.map(room => (
-          <div key={room.id} className="bg-pms-bg-card border border-pms-border-light rounded-pms p-5 space-y-3">
+        {rooms.map((room, index) => (
+          <div key={room.id} className="bg-pms-bg-card border border-pms-border-light rounded-pms p-5 space-y-3 relative group">
+            <div className="absolute -left-2 top-1/2 -translate-y-1/2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-all z-10 bg-pms-bg rounded-pms border border-pms-border shadow-sm p-1">
+              <button disabled={index === 0} onClick={() => moveRoom(index, 'up')} className="p-1 hover:bg-pms-accent/10 text-pms-text disabled:opacity-20">▲</button>
+              <button disabled={index === rooms.length - 1} onClick={() => moveRoom(index, 'down')} className="p-1 hover:bg-pms-accent/10 text-pms-text disabled:opacity-20">▼</button>
+            </div>
             {room.photos?.[0] && (
               <img src={room.photos[0]} alt={room.name_zh} className="w-full h-32 object-cover rounded-pms" />
             )}
@@ -162,7 +176,7 @@ const RoomManager: React.FC<RoomManagerProps> = ({ onConfirmDelete }) => {
               </div>
             </div>
             <footer className="mt-6">
-              <button onClick={handleSave} className="w-full bg-pms-accent text-white font-bold py-3 rounded-pms hover:bg-pms-accent-hover active:scale-[0.98] transition-all text-sm flex items-center justify-center gap-2">
+              <button onClick={handleSave} className="w-full bg-pms-accent text-[var(--pms-text-on-accent)] font-bold py-3 rounded-pms hover:bg-pms-accent-hover active:scale-[0.98] transition-all text-sm flex items-center justify-center gap-2 shadow-glow">
                 <Save size={16} /> 儲存房型
               </button>
             </footer>

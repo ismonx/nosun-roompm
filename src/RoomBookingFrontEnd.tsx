@@ -120,7 +120,7 @@ const RoomBookingFrontEnd: React.FC<{ onAdminLogin: () => void }> = ({ onAdminLo
             disabled={isPast || remainingRooms === 0}
             onClick={() => { setDates(prev => ({ ...prev, [selectingType]: iso })); setIsDatePickerOpen(false); }}
             className={`aspect-square flex flex-col items-center justify-center rounded-pms text-xs font-medium transition-all relative
-              ${isSelected ? 'bg-pms-accent text-white font-bold scale-95 ring-2 ring-pms-accent ring-offset-1' : 'hover:bg-pms-accent/15'}
+              ${isSelected ? 'bg-pms-accent text-[var(--pms-text-on-accent)] font-bold scale-95 ring-2 ring-pms-accent ring-offset-1' : 'hover:bg-pms-accent/15'}
               ${isToday && !isSelected ? 'border-[3px] border-black dark:border-white font-extrabold text-pms-accent' : ''}
               ${isPast ? 'opacity-20 pointer-events-none' : ''}
               ${remainingRooms === 0 && !isPast ? 'line-through text-gray-400 opacity-50' : ''}
@@ -191,7 +191,7 @@ const RoomBookingFrontEnd: React.FC<{ onAdminLogin: () => void }> = ({ onAdminLo
           <button aria-label="切換深淺模式" onClick={toggleDark} className="p-2 rounded-pms border border-pms-border text-pms-accent hover:bg-pms-accent/10 transition-all">
             {isDark ? <Sun size={14} /> : <Moon size={14} />}
           </button>
-          <button aria-label="切換語言" onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')} className="flex items-center gap-1.5 text-[10px] font-bold px-3 py-1.5 rounded-pms border border-pms-border hover:bg-pms-accent hover:text-white transition-all text-pms-text group">
+          <button aria-label="切換語言" onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')} className="flex items-center gap-1.5 text-[10px] font-bold px-3 py-1.5 rounded-pms border border-pms-border hover:bg-pms-accent hover:text-[var(--pms-text-on-accent)] transition-all text-pms-text group">
             <Languages size={14} /> <span>{lang === 'zh' ? 'EN' : 'ZH'}</span>
           </button>
         </div>
@@ -229,7 +229,7 @@ const RoomBookingFrontEnd: React.FC<{ onAdminLogin: () => void }> = ({ onAdminLo
                   </div>
                 </div>
               )}
-              <button disabled={!dates.checkIn || !dates.checkOut || isSoldOut} onClick={() => setStep(2)} className="w-full bg-pms-accent text-white font-bold py-5 rounded-pms text-lg active:scale-[0.98] disabled:opacity-50 transition-all shadow-glow flex items-center justify-center gap-2 group">
+              <button disabled={!dates.checkIn || !dates.checkOut || isSoldOut} onClick={() => setStep(2)} className="w-full bg-pms-accent text-[var(--pms-text-on-accent)] font-bold py-5 rounded-pms text-lg active:scale-[0.98] disabled:opacity-50 transition-all shadow-glow flex items-center justify-center gap-2 group">
                 {lang === 'zh' ? '選擇房型' : 'CHOOSE ROOM'} <ArrowRight size={20} />
               </button>
             </motion.div>
@@ -244,7 +244,7 @@ const RoomBookingFrontEnd: React.FC<{ onAdminLogin: () => void }> = ({ onAdminLo
                   const isSelected = selectedRoomId === room.id;
                   return (
                     <div key={room.id} className={!isAvailable ? 'opacity-30 grayscale pointer-events-none' : ''}>
-                      <button disabled={!isAvailable} onClick={() => { setSelectedRoomId(room.id); setExtraGuests(0); }} className={`w-full rounded-pms border-2 text-left overflow-hidden transition-all ${isSelected ? 'border-pms-accent bg-pms-accent text-white' : 'border-pms-border-light bg-pms-bg-card'}`}>
+                      <button disabled={!isAvailable} onClick={() => { setSelectedRoomId(room.id); setExtraGuests(0); }} className={`w-full rounded-pms border-2 text-left overflow-hidden transition-all ${isSelected ? 'border-pms-accent bg-pms-accent text-[var(--pms-text-on-accent)]' : 'border-pms-border-light bg-pms-bg-card'}`}>
                         {room.photos && room.photos.length > 0 ? (
                           <img src={room.photos[0]} alt={room.name_zh} className="w-full h-40 object-cover" />
                         ) : (
@@ -282,7 +282,7 @@ const RoomBookingFrontEnd: React.FC<{ onAdminLogin: () => void }> = ({ onAdminLo
                   );
                 })}
               </div>
-              <button disabled={!selectedRoomId} onClick={() => setStep(3)} className="w-full bg-pms-accent text-white font-bold py-5 rounded-pms text-lg shadow-glow">{lang === 'zh' ? '繼續填寫' : 'CONTINUE'}</button>
+              <button disabled={!selectedRoomId} onClick={() => setStep(3)} className="w-full bg-pms-accent text-[var(--pms-text-on-accent)] font-bold py-5 rounded-pms text-lg shadow-glow">{lang === 'zh' ? '繼續填寫' : 'CONTINUE'}</button>
             </motion.div>
           )}
 
@@ -294,7 +294,7 @@ const RoomBookingFrontEnd: React.FC<{ onAdminLogin: () => void }> = ({ onAdminLo
                 <input type="tel" placeholder={t('phone')} value={guestInfo.phone} onChange={e => setGuestInfo({ ...guestInfo, phone: e.target.value })} className="w-full bg-pms-bg-card p-4 rounded-pms border border-pms-border-light font-bold text-sm outline-none text-pms-text" />
                 <textarea placeholder={t('note')} value={guestInfo.note} onChange={e => setGuestInfo({ ...guestInfo, note: e.target.value })} className="w-full bg-pms-bg-card p-4 rounded-pms border border-pms-border-light font-medium text-sm h-24 outline-none text-pms-text resize-none" />
               </div>
-              <button disabled={!guestInfo.name || !guestInfo.phone} onClick={handleBooking} className="w-full bg-pms-accent text-white font-bold py-5 rounded-pms text-lg shadow-glow">{t('bookingBtn')}</button>
+              <button disabled={!guestInfo.name || !guestInfo.phone} onClick={handleBooking} className="w-full bg-pms-accent text-[var(--pms-text-on-accent)] font-bold py-5 rounded-pms text-lg shadow-glow">{t('bookingBtn')}</button>
             </motion.div>
           )}
 
@@ -317,7 +317,7 @@ const RoomBookingFrontEnd: React.FC<{ onAdminLogin: () => void }> = ({ onAdminLo
               ) : (
                 <div className="flex items-center gap-1.5">
                   <input value={codeInput} onChange={e => setCodeInput(e.target.value.toUpperCase())} placeholder="代碼" className="text-[10px] border border-pms-border rounded px-2 py-1 w-24 bg-pms-bg-card text-pms-text outline-none" />
-                  <button onClick={() => { const ok = validateCode(codeInput); setCodeStatus(ok ? 'valid' : 'invalid'); setTimeout(() => setCodeStatus(null), 2000); }} className="text-[10px] bg-pms-text text-pms-bg px-2.5 py-1 rounded font-bold">套用</button>
+                  <button onClick={() => { const ok = validateCode(codeInput); setCodeStatus(ok ? 'valid' : 'invalid'); setTimeout(() => setCodeStatus(null), 2000); }} className="text-[10px] bg-pms-accent text-[var(--pms-text-on-accent)] px-2.5 py-1 rounded font-bold">套用</button>
                 </div>
               )}
               {codeStatus === 'valid' && <span className="text-[10px] text-green-500 font-bold">✓ 套用成功</span>}

@@ -131,7 +131,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ activeTab, setActiveTab, we
           <header className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-1.5">
               <div className="flex border border-pms-border rounded-pms overflow-hidden">
-                <button onClick={() => setActiveTab('week')} className="px-2.5 py-1.5 text-[11px] font-bold bg-pms-accent text-white">週</button>
+                <button onClick={() => setActiveTab('week')} className="px-2.5 py-1.5 text-[11px] font-bold bg-pms-accent text-[var(--pms-text-on-accent)]">週</button>
                 <button onClick={() => setActiveTab('month')} className="px-2.5 py-1.5 text-[11px] font-bold text-pms-text-muted hover:bg-pms-accent/10 border-l border-pms-border">月</button>
               </div>
               <button onClick={() => {
@@ -166,18 +166,18 @@ const CalendarView: React.FC<CalendarViewProps> = ({ activeTab, setActiveTab, we
                 const isWeekend = date.getDay() === 0 || date.getDay() === 6;
                 return (
                   <div key={d} className={`p-2 bg-pms-bg-card border-b border-r border-pms-border-light text-center ${d === today ? 'bg-pms-accent/10' : ''}`}>
-                    <div className={`text-xs font-bold ${wholeHouseDates[d] ? 'text-indigo-600' : isWeekend ? 'text-orange-500' : 'text-pms-text'}`}>{d.split('-').slice(1).join('/')}</div>
-                    <div className={`text-[9px] ${wholeHouseDates[d] ? 'text-indigo-400' : isWeekend ? 'text-orange-400' : 'text-pms-text-muted'}`}>{wholeHouseDates[d] ? '包棟' : dayName}</div>
+                    <div className={`text-sm font-bold ${wholeHouseDates[d] ? 'text-indigo-600' : isWeekend ? 'text-orange-500' : 'text-pms-text'}`}>{d.split('-').slice(1).join('/')}</div>
+                    <div className={`text-[10px] ${wholeHouseDates[d] ? 'text-indigo-400' : isWeekend ? 'text-orange-400' : 'text-pms-text-muted'}`}>{wholeHouseDates[d] ? '包棟' : dayName}</div>
                   </div>
                 );
               })}
               {rooms.map(room => (
                 <React.Fragment key={room.id}>
-                  <div className="p-3 bg-pms-bg border-b border-r border-pms-border-light text-[11px] font-bold text-pms-text truncate sticky-col">
+                  <div className="p-3 bg-pms-bg border-b border-r border-pms-border-light text-[11px] font-bold text-pms-text truncate sticky-col mb-[5px]">
                     {lang === 'zh' ? room.name_zh : room.name_en}
                   </div>
                   {weekDays.map(d => (
-                    <div key={`${d}_${room.id}`} className={`p-1 border-b border-r border-pms-border-light ${wholeHouseDates[d] ? 'bg-indigo-50/30 dark:bg-indigo-900/10' : ''}`}>
+                    <div key={`${d}_${room.id}`} className={`p-1 border-b border-r border-pms-border-light mb-[5px] ${wholeHouseDates[d] ? 'bg-indigo-50/30 dark:bg-indigo-900/10' : ''}`}>
                       <WeekCell date={d} room={room} booking={bookings[`${d}_${room.id}`]} onClick={onSelectCell} isToday={d === today} isPast={d < today} />
                     </div>
                   ))}
@@ -224,7 +224,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ activeTab, setActiveTab, we
             <div className="flex items-center gap-1.5">
               <div className="flex border border-pms-border rounded-pms overflow-hidden">
                 <button onClick={() => setActiveTab('week')} className="px-2.5 py-1.5 text-[11px] font-bold text-pms-text-muted hover:bg-pms-accent/10 border-r border-pms-border">週</button>
-                <button onClick={() => setActiveTab('month')} className="px-2.5 py-1.5 text-[11px] font-bold bg-pms-accent text-white">月</button>
+                <button onClick={() => setActiveTab('month')} className="px-2.5 py-1.5 text-[11px] font-bold bg-pms-accent text-[var(--pms-text-on-accent)]">月</button>
               </div>
               <button onClick={() => setMonthDate(new Date())} className="px-2.5 py-1.5 rounded-pms border border-pms-border text-[11px] font-bold hover:bg-pms-accent/10">Today</button>
               <button aria-label="上個月" onClick={() => setMonthDate(new Date(monthDate.getFullYear(), monthDate.getMonth() - 1))} className="p-1.5 rounded-pms border border-pms-border hover:bg-pms-accent/10"><ChevronLeft size={14} /></button>
@@ -232,7 +232,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ activeTab, setActiveTab, we
               <button aria-label="下個月" onClick={() => setMonthDate(new Date(monthDate.getFullYear(), monthDate.getMonth() + 1))} className="p-1.5 rounded-pms border border-pms-border hover:bg-pms-accent/10"><ChevronRight size={14} /></button>
             </div>
           </header>
-          <div className="grid grid-cols-7 gap-1">
+          <div className="grid grid-cols-7 gap-1 w-full max-w-full overflow-hidden">
             {dayNames.map(d => <div key={d} className="text-center text-[10px] font-bold text-pms-text-muted py-2">{d}</div>)}
             {monthDays.map((d, i) => d ? (
               <MonthCell key={d} date={d} rooms={rooms} bookings={bookings} onSelect={(date) => {
@@ -243,7 +243,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ activeTab, setActiveTab, we
                 setWeekStart(mon.toISOString().split('T')[0]);
                 setActiveTab('week');
               }} isToday={d === today} isPast={d < today} />
-            ) : <div key={`pad-${i}`} />)}
+            ) : <div key={`pad-${i}`} className="min-h-[70px]" />)}
           </div>
         </div>
       )}
