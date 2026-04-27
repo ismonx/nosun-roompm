@@ -84,6 +84,21 @@ const DEFAULT_ROOMS: Room[] = [
     promo_price: 0,
     sort_order: 1,
   },
+  {
+    id: 'whole_house',
+    name_zh: '【全棟包棟】防曬不要擦太多',
+    name_en: 'Whole House Service',
+    category: 'whole',
+    photos: [], 
+    standard_capacity: 12, 
+    max_capacity: 16,      
+    extra_guest_fee: 500,  
+    base_price: 11000,     // 預設價格 11,000
+    promo_price: 0,
+    description: '包含 2 間兩人房、2 間四人房，恆春放空首選',
+    inventory: 1,
+    sort_order: 99
+  },
 ];
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -238,11 +253,23 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const checkAvailability = useCallback((dateStr: string, roomId: string): boolean => {
     if (!dateStr) return false;
-    const booking = bookings[`${dateStr}_${roomId}`];
-    const wholeHouseBooking = Object.values(bookings).find(
-      b => b.date === dateStr && b.is_whole_house
-    );
-    return !booking && !wholeHouseBooking;
+    
+    // 1. 基本檢查：該日期該房型是否已被佔用
+    if (bookings[`${dateStr}_${roomId}`]) return false;
+
+    // 2. 互斥檢查邏輯
+    const dayBookings = Object.values(bookings).filter(b => b.date === dateStr);
+
+    // 如果有人訂了「包棟」，單間全部鎖死
+    const isWholeHouseBooked = dayBookings.some(b => b.is_whole_house || b.room_id === 'whole_house');
+    if (isWholeHouseBooked) return false;
+
+    // 如果現在查的是「包棟」，但當天已經有任何單間被訂，則包棟鎖死
+    if (roomId === 'whole_house' && dayBookings.length > 0) {
+      return false;
+    }
+
+    return true;
   }, [bookings]);
 
   const updateSettings = useCallback(async (newData: Partial<AppSettings>) => {

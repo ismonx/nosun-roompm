@@ -1,10 +1,12 @@
 // PMS V6.0 Core Types
 
+export type RoomCategory = 'double' | 'quad' | 'suite' | 'dorm' | 'whole';
+
 export interface Room {
   id: string;
   name_zh: string;
   name_en: string;
-  category: string;
+  category: RoomCategory;
   photos: string[];
   standard_capacity: number;
   max_capacity: number;
@@ -12,6 +14,8 @@ export interface Room {
   base_price: number;
   promo_price: number;
   sort_order: number;
+  description?: string;
+  inventory?: number;
 }
 
 export interface Booking {
