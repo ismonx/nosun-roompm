@@ -245,7 +245,13 @@ const RoomBookingFrontEnd: React.FC<{ onAdminLogin: () => void }> = ({ onAdminLo
                   return (
                     <div key={room.id} className={!isAvailable ? 'opacity-30 grayscale pointer-events-none' : ''}>
                       <button disabled={!isAvailable} onClick={() => { setSelectedRoomId(room.id); setExtraGuests(0); }} className={`w-full rounded-pms border-2 text-left overflow-hidden transition-all ${isSelected ? 'border-pms-accent bg-pms-accent text-white' : 'border-pms-border-light bg-pms-bg-card'}`}>
-                        {room.photos?.[0] && <img src={room.photos[0]} alt={room.name_zh} className="w-full h-40 object-cover" />}
+                        {room.photos && room.photos.length > 0 ? (
+                          <img src={room.photos[0]} alt={room.name_zh} className="w-full h-40 object-cover" />
+                        ) : (
+                          <div className="bg-pms-bg-card flex items-center justify-center h-40 border-b border-pms-border-light">
+                            <span className="text-[10px] font-bold text-pms-text-muted italic">防曬不要擦太多 - 12人包棟建置中</span>
+                          </div>
+                        )}
                         <div className="p-5 flex justify-between items-start">
                           <div>
                             <h3 className="font-heading text-xl font-bold mb-1">{lang === 'zh' ? room.name_zh : room.name_en}</h3>
