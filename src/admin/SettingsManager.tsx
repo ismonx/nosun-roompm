@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Settings, Plus, Edit3, Trash2, Save, X } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { PromoCode, AppSettings } from '../types';
@@ -10,53 +10,79 @@ interface SettingsManagerProps {
 const SettingsManager: React.FC<SettingsManagerProps> = ({ onConfirmDelete }) => {
   const { lang, settings, updateSettings, promoCodes, addPromoCode, updatePromoCode, deletePromoCode } = useApp();
   const [editingPromo, setEditingPromo] = useState<string | null>(null);
+  const [localSettings, setLocalSettings] = useState<AppSettings>(settings);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // 當外部 settings 更新時（例如從 Firebase 同步），同步更新本地 state
+  useEffect(() => {
+    setLocalSettings(settings);
+  }, [settings]);
+
+  const handleSaveSettings = async () => {
+    setIsSaving(true);
+    await updateSettings(localSettings);
+    setIsSaving(false);
+  };
+
+  const hasChanges = JSON.stringify(localSettings) !== JSON.stringify(settings);
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <h2 className="font-heading text-xl font-bold text-pms-text">全域設定</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="font-heading text-xl font-bold text-pms-text">全域設定</h2>
+        {hasChanges && (
+          <button
+            onClick={handleSaveSettings}
+            disabled={isSaving}
+            className="flex items-center gap-2 px-4 py-2 bg-pms-accent text-white rounded-pms text-xs font-bold hover:bg-pms-accent-hover transition-all shadow-glow"
+          >
+            <Save size={14} /> {isSaving ? '儲存中...' : '儲存所有設定'}
+          </button>
+        )}
+      </div>
 
       {/* 文案設定 */}
-      <div className="bg-pms-bg-card border border-pms-border-light rounded-pms p-5 space-y-4">
+      <div className="bg-pms-bg-card border border-pms-border-light rounded-pms p-5 space-y-4 shadow-sm">
         <h3 className="font-bold text-sm text-pms-accent">首頁文案</h3>
         {(['home_title_zh', 'home_title_en', 'home_subtitle_zh', 'home_subtitle_en', 'hostel_name', 'hostel_name_en', 'login_title'] as const).map(key => (
           <div key={key} className="space-y-1">
             <label className="text-[10px] font-bold text-pms-text-muted uppercase tracking-wider">{key.replace(/_/g, ' ')}</label>
             <input
               type="text"
-              value={settings[key] || ''}
-              onChange={e => updateSettings({ [key]: e.target.value })}
-              className="w-full bg-pms-bg border border-pms-border rounded-pms p-3 text-sm font-medium text-pms-text focus:border-pms-accent outline-none"
+              value={localSettings[key] || ''}
+              onChange={e => setLocalSettings({ ...localSettings, [key]: e.target.value })}
+              className="w-full bg-pms-bg border border-pms-border rounded-pms p-3 text-sm font-medium text-pms-text focus:border-pms-accent outline-none transition-all"
             />
           </div>
         ))}
       </div>
 
       {/* 推薦系統 */}
-      <div className="bg-pms-bg-card border border-pms-border-light rounded-pms p-5 space-y-4">
+      <div className="bg-pms-bg-card border border-pms-border-light rounded-pms p-5 space-y-4 shadow-sm">
         <div className="flex justify-between items-center">
           <h3 className="font-bold text-sm text-pms-accent">夥伴推薦系統</h3>
           <button
-            onClick={() => updateSettings({ referral_switch: !settings.referral_switch })}
-            className={`w-10 h-5 rounded-full relative transition-all ${settings.referral_switch ? 'bg-pms-accent' : 'bg-pms-border'}`}
+            onClick={() => setLocalSettings({ ...localSettings, referral_switch: !localSettings.referral_switch })}
+            className={`w-10 h-5 rounded-full relative transition-all ${localSettings.referral_switch ? 'bg-pms-accent' : 'bg-pms-border'}`}
           >
-            <div className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform ${settings.referral_switch ? 'translate-x-5' : ''}`} />
+            <div className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform ${localSettings.referral_switch ? 'translate-x-5' : ''}`} />
           </button>
         </div>
         <textarea
-          value={(settings as any)[`referral_msg_${lang}`] || ''}
-          onChange={e => updateSettings({ [`referral_msg_${lang}`]: e.target.value })}
-          className="w-full bg-pms-bg border border-pms-border rounded-pms p-3 text-xs font-medium h-24 outline-none focus:border-pms-accent text-pms-text resize-none"
+          value={(localSettings as any)[`referral_msg_${lang}`] || ''}
+          onChange={e => setLocalSettings({ ...localSettings, [`referral_msg_${lang}`]: e.target.value })}
+          className="w-full bg-pms-bg border border-pms-border rounded-pms p-3 text-xs font-medium h-24 outline-none focus:border-pms-accent text-pms-text resize-none transition-all"
         />
       </div>
 
       {/* 密碼 */}
-      <div className="bg-pms-bg-card border border-pms-border-light rounded-pms p-5 space-y-3">
+      <div className="bg-pms-bg-card border border-pms-border-light rounded-pms p-5 space-y-3 shadow-sm">
         <h3 className="font-bold text-sm text-pms-accent">管理密碼</h3>
         <input
           type="text"
-          value={settings.admin_password || ''}
-          onChange={e => updateSettings({ admin_password: e.target.value })}
-          className="w-full bg-pms-bg border border-pms-border rounded-pms p-3 text-sm font-mono text-pms-text focus:border-pms-accent outline-none"
+          value={localSettings.admin_password || ''}
+          onChange={e => setLocalSettings({ ...localSettings, admin_password: e.target.value })}
+          className="w-full bg-pms-bg border border-pms-border rounded-pms p-3 text-sm font-mono text-pms-text focus:border-pms-accent outline-none transition-all"
         />
       </div>
 
