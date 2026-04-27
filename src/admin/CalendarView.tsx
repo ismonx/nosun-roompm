@@ -24,16 +24,16 @@ const WeekCell: React.FC<{ date: string, room: Room, booking?: Booking, onClick:
   return (
     <div
       onClick={() => !isPast && onClick(date, room.id)}
-      className={`relative min-h-[var(--pms-cell-h)] rounded-pms border border-pms-border-light p-2 cursor-pointer transition-all hover:shadow-md
+      className={`relative min-h-[5.5rem] rounded-pms border border-pms-border-light p-2 cursor-pointer transition-all hover:shadow-md
         ${isPast ? 'opacity-30 pointer-events-none' : ''}
         ${isToday ? 'calendar-today' : ''}
         ${booking ? statusColors[booking.status] || 'bg-pms-bg-card' : 'bg-pms-bg-card hover:bg-pms-accent/10'}
       `}
     >
       {booking ? (
-        <div className="flex flex-col gap-0.5">
-          <span className="text-[11px] font-bold truncate opacity-100">{booking.customer_name}</span>
-          <span className="text-[9px] font-bold opacity-100 text-white/90">
+        <div className="flex flex-col gap-1">
+          <span className="text-[11px] font-bold truncate">{booking.customer_name}</span>
+          <span className="text-[10px] font-bold opacity-80">
             ${((booking.total_price || 0) / 1000).toFixed(1)}k
           </span>
         </div>
@@ -68,20 +68,18 @@ const MonthCell: React.FC<{ date: string, rooms: Room[], bookings: Record<string
       <div className={`text-xs font-bold mb-1 ${isFull ? 'line-through text-status-full' : 'text-pms-text'}`}>
         {dayNum}
       </div>
-      <div className="flex flex-col gap-0.5">
         {dayBookings.map(({ room, booking }) => (
-          <div key={room.id} className={`text-[10px] rounded px-1 py-0.5 truncate font-bold
+          <div key={room.id} className={`text-[10px] rounded px-1 py-0.5 truncate font-bold h-4
             ${booking
               ? booking.status === 'pending' ? 'bg-status-pending/20 text-status-pending'
               : booking.status === 'deposit' ? 'bg-status-deposit/20 text-status-deposit'
               : 'bg-status-full/20 text-status-full'
-              : 'text-pms-text/30'
+              : ''
             }
           `}>
-            {booking ? (booking.customer_name || '---') : '空'}
+            {booking ? (booking.customer_name || '---') : ''}
           </div>
         ))}
-      </div>
     </div>
   );
 });
@@ -157,8 +155,8 @@ const CalendarView: React.FC<CalendarViewProps> = ({ activeTab, setActiveTab, we
           </header>
 
           <div className="border border-pms-border rounded-pms overflow-hidden overflow-x-auto">
-            {/* Desktop View (Visible on sm+) */}
-            <div className="hidden sm:grid calendar-grid-desktop min-w-[800px] gap-y-[5px]">
+            {/* Unified View (Always grid with horizontal scroll on mobile) */}
+            <div className="grid calendar-grid-desktop min-w-[850px] gap-y-[5px]">
               <div className="p-3 bg-pms-bg-card border-b border-r border-pms-border-light text-[10px] font-bold text-pms-accent uppercase tracking-wider sticky-col">Rooms</div>
               {weekDays.map(d => {
                 const date = new Date(d + 'T00:00:00');
@@ -173,7 +171,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ activeTab, setActiveTab, we
               })}
               {rooms.map(room => (
                 <React.Fragment key={room.id}>
-                  <div className="p-3 bg-pms-bg border-b border-r border-pms-border-light text-[11px] font-bold text-pms-text truncate sticky-col">
+                  <div className="p-3 bg-pms-bg border-b border-r border-pms-border-light text-[11px] font-bold text-pms-text truncate sticky-col flex items-center">
                     {lang === 'zh' ? room.name_zh : room.name_en}
                   </div>
                   {weekDays.map(d => (
@@ -181,38 +179,6 @@ const CalendarView: React.FC<CalendarViewProps> = ({ activeTab, setActiveTab, we
                       <WeekCell date={d} room={room} booking={bookings[`${d}_${room.id}`]} onClick={onSelectCell} isToday={d === today} isPast={d < today} />
                     </div>
                   ))}
-                </React.Fragment>
-              ))}
-            </div>
-
-            {/* Mobile View (Visible on xs) - 2 rows for 7 days */}
-            <div className="grid sm:hidden calendar-grid-mobile">
-              {rooms.map(room => (
-                <React.Fragment key={room.id}>
-                  {/* Row 1: Days 0-3 */}
-                  <div className="p-2 bg-pms-accent/5 border-b border-r border-pms-border-light text-[10px] font-bold text-pms-accent sticky-col flex flex-col justify-center">
-                    <span className="truncate">{lang === 'zh' ? room.name_zh : room.name_en}</span>
-                    <span className="text-[10px] font-bold text-pms-accent/60">1/2</span>
-                  </div>
-                  {weekDays.slice(0, 4).map(d => (
-                    <div key={`${d}_${room.id}_1`} className={`p-1 border-b border-r border-pms-border-light ${wholeHouseDates[d] ? 'bg-indigo-50/30' : ''}`}>
-                      <div className="text-[10px] font-bold mb-1 text-pms-text-muted">{d.split('-').slice(2)}</div>
-                      <WeekCell date={d} room={room} booking={bookings[`${d}_${room.id}`]} onClick={onSelectCell} isToday={d === today} isPast={d < today} />
-                    </div>
-                  ))}
-
-                  {/* Row 2: Days 4-6 */}
-                  <div className="p-2 bg-pms-accent/5 border-b border-r border-pms-border-light text-[10px] font-bold text-pms-accent sticky-col flex flex-col justify-center mb-[5px]">
-                    <span className="truncate opacity-40">{lang === 'zh' ? room.name_zh : room.name_en}</span>
-                    <span className="text-[10px] font-bold text-pms-accent/60">2/2</span>
-                  </div>
-                  {weekDays.slice(4, 7).map(d => (
-                    <div key={`${d}_${room.id}_2`} className={`p-1 border-b border-r border-pms-border-light mb-[5px] ${wholeHouseDates[d] ? 'bg-indigo-50/30' : ''}`}>
-                      <div className="text-[10px] font-bold mb-1 text-pms-text-muted">{d.split('-').slice(2)}</div>
-                      <WeekCell date={d} room={room} booking={bookings[`${d}_${room.id}`]} onClick={onSelectCell} isToday={d === today} isPast={d < today} />
-                    </div>
-                  ))}
-                  <div className="bg-pms-bg-card/50 border-b border-pms-border-light mb-[5px]" /> {/* Empty padding cell */}
                 </React.Fragment>
               ))}
             </div>
