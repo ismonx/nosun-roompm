@@ -142,12 +142,12 @@ const CalendarView: React.FC<CalendarViewProps> = ({ activeTab, setActiveTab, we
                 setWeekStart(monday.toISOString().split('T')[0]);
               }} className="px-2.5 py-1.5 rounded-pms border border-pms-border text-[11px] font-bold hover:bg-pms-accent/10">Today</button>
               <span className="text-pms-border-light">│</span>
-              <button onClick={() => {
+              <button aria-label="上週" onClick={() => {
                 const d = new Date(weekStart);
                 d.setDate(d.getDate() - 7);
                 setWeekStart(d.toISOString().split('T')[0]);
               }} className="p-1.5 rounded-pms border border-pms-border hover:bg-pms-accent/10"><ChevronLeft size={14} /></button>
-              <button onClick={() => {
+              <button aria-label="下週" onClick={() => {
                 const d = new Date(weekStart);
                 d.setDate(d.getDate() + 7);
                 setWeekStart(d.toISOString().split('T')[0]);
@@ -194,9 +194,9 @@ const CalendarView: React.FC<CalendarViewProps> = ({ activeTab, setActiveTab, we
                 <button onClick={() => setActiveTab('month')} className="px-2.5 py-1.5 text-[11px] font-bold bg-pms-accent text-white">月</button>
               </div>
               <button onClick={() => setMonthDate(new Date())} className="px-2.5 py-1.5 rounded-pms border border-pms-border text-[11px] font-bold hover:bg-pms-accent/10">Today</button>
-              <button onClick={() => setMonthDate(new Date(monthDate.getFullYear(), monthDate.getMonth() - 1))} className="p-1.5 rounded-pms border border-pms-border hover:bg-pms-accent/10"><ChevronLeft size={14} /></button>
+              <button aria-label="上個月" onClick={() => setMonthDate(new Date(monthDate.getFullYear(), monthDate.getMonth() - 1))} className="p-1.5 rounded-pms border border-pms-border hover:bg-pms-accent/10"><ChevronLeft size={14} /></button>
               <span className="text-xs font-bold text-pms-text">{monthDate.getFullYear()} / {monthDate.getMonth() + 1}</span>
-              <button onClick={() => setMonthDate(new Date(monthDate.getFullYear(), monthDate.getMonth() + 1))} className="p-1.5 rounded-pms border border-pms-border hover:bg-pms-accent/10"><ChevronRight size={14} /></button>
+              <button aria-label="下個月" onClick={() => setMonthDate(new Date(monthDate.getFullYear(), monthDate.getMonth() + 1))} className="p-1.5 rounded-pms border border-pms-border hover:bg-pms-accent/10"><ChevronRight size={14} /></button>
             </div>
           </header>
           <div className="grid grid-cols-7 gap-1">

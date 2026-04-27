@@ -75,7 +75,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ selectedCell, onClose, onCo
               </span>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 rounded-pms hover:bg-pms-accent/10 text-pms-text-muted"><X size={18} /></button>
+          <button aria-label="關閉視窗" onClick={onClose} className="p-2 rounded-pms hover:bg-pms-accent/10 text-pms-text-muted"><X size={18} /></button>
         </header>
 
         <div className="space-y-4">
@@ -144,7 +144,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ selectedCell, onClose, onCo
             </a>
           )}
           {bookings[`${selectedCell.date}_${selectedCell.roomId}`] && (
-            <button onClick={handleDelete} className="py-3 px-4 rounded-pms border border-red-400 text-red-500 text-xs font-bold hover:bg-red-50 transition-all">
+            <button aria-label="刪除訂單" onClick={handleDelete} className="py-3 px-4 rounded-pms border border-red-400 text-red-500 text-xs font-bold hover:bg-red-50 transition-all">
               <Trash2 size={14} />
             </button>
           )}

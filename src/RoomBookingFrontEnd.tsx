@@ -140,14 +140,14 @@ const RoomBookingFrontEnd: React.FC<{ onAdminLogin: () => void }> = ({ onAdminLo
       <div className="fixed inset-0 z-[100] bg-pms-bg/95 backdrop-blur-xl flex flex-col">
         <header className="p-6 flex justify-between items-center border-b border-pms-border-light">
           <h3 className="font-heading font-bold text-pms-accent uppercase tracking-widest text-sm">{t(selectingType)}</h3>
-          <button onClick={() => setIsDatePickerOpen(false)} className="p-2 rounded-pms bg-pms-bg-card text-pms-text-muted hover:text-pms-text"><X size={18} /></button>
+          <button aria-label="關閉日曆" onClick={() => setIsDatePickerOpen(false)} className="p-2 rounded-pms bg-pms-bg-card text-pms-text-muted hover:text-pms-text"><X size={18} /></button>
         </header>
         <div className="flex-1 overflow-auto p-6 flex flex-col items-center">
           <div className="w-full max-w-sm">
             <div className="flex justify-between items-center mb-8">
-              <button onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1))} className="p-2 border border-pms-border rounded-pms text-pms-text hover:bg-pms-accent/10"><ChevronLeft size={18} /></button>
+              <button aria-label="上一個月" onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1))} className="p-2 border border-pms-border rounded-pms text-pms-text hover:bg-pms-accent/10"><ChevronLeft size={18} /></button>
               <span className="text-lg font-bold text-pms-text">{viewDate.getFullYear()} / {String(viewDate.getMonth() + 1).padStart(2, '0')}</span>
-              <button onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1))} className="p-2 border border-pms-border rounded-pms text-pms-text hover:bg-pms-accent/10"><ChevronRight size={18} /></button>
+              <button aria-label="下一個月" onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1))} className="p-2 border border-pms-border rounded-pms text-pms-text hover:bg-pms-accent/10"><ChevronRight size={18} /></button>
             </div>
             <div className="grid grid-cols-7 gap-2 text-[10px] text-pms-text-muted text-center mb-3 font-bold">
               {['一', '二', '三', '四', '五', '六', '日'].map(d => <div key={d}>{d}</div>)}
@@ -178,7 +178,7 @@ const RoomBookingFrontEnd: React.FC<{ onAdminLogin: () => void }> = ({ onAdminLo
       {isDatePickerOpen && <DatePickerModal />}
       <nav className="px-5 py-5 flex justify-between items-center border-b border-pms-border-light sticky top-0 bg-pms-bg/90 backdrop-blur-md z-50">
         <div className="flex items-center gap-3">
-          {step > 1 && step < 4 && <button onClick={() => setStep(step - 1)} className="p-1 text-pms-text"><ArrowLeft size={18} /></button>}
+          {step > 1 && step < 4 && <button aria-label="返回上一步" onClick={() => setStep(step - 1)} className="p-1 text-pms-text"><ArrowLeft size={18} /></button>}
           <div onClick={(e) => e.detail === 3 && onAdminLogin()}>
             <h1 className="font-heading text-lg font-bold text-pms-accent leading-tight">
               {settings.hostel_name || '防曬不要擦太多民宿'}
@@ -188,10 +188,10 @@ const RoomBookingFrontEnd: React.FC<{ onAdminLogin: () => void }> = ({ onAdminLo
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={toggleDark} className="p-2 rounded-pms border border-pms-border text-pms-accent hover:bg-pms-accent/10 transition-all">
+          <button aria-label="切換深淺模式" onClick={toggleDark} className="p-2 rounded-pms border border-pms-border text-pms-accent hover:bg-pms-accent/10 transition-all">
             {isDark ? <Sun size={14} /> : <Moon size={14} />}
           </button>
-          <button onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')} className="flex items-center gap-1.5 text-[10px] font-bold px-3 py-1.5 rounded-pms border border-pms-border hover:bg-pms-accent hover:text-white transition-all text-pms-text group">
+          <button aria-label="切換語言" onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')} className="flex items-center gap-1.5 text-[10px] font-bold px-3 py-1.5 rounded-pms border border-pms-border hover:bg-pms-accent hover:text-white transition-all text-pms-text group">
             <Languages size={14} /> <span>{lang === 'zh' ? 'EN' : 'ZH'}</span>
           </button>
         </div>
@@ -210,7 +210,7 @@ const RoomBookingFrontEnd: React.FC<{ onAdminLogin: () => void }> = ({ onAdminLo
                   <button key={type} onClick={() => { setSelectingType(type); setIsDatePickerOpen(true); }} className={`w-full p-6 bg-pms-bg-card rounded-pms border-2 flex justify-between items-center transition-all ${dates[type] ? 'border-pms-accent bg-pms-accent/5' : 'border-pms-border-light shadow-sm'}`}>
                     <div className="text-left">
                       <p className="text-[9px] uppercase font-bold text-pms-text-muted mb-1.5 tracking-widest">{t(type)}</p>
-                      <p className={`text-lg font-bold ${!dates[type] ? 'text-pms-text-muted opacity-70' : 'text-pms-text'}`}>{dates[type] || t(type)}</p>
+                      <p className={`text-lg font-bold ${!dates[type] ? 'text-pms-text-muted opacity-80' : 'text-pms-text'}`}>{dates[type] || t(type)}</p>
                     </div>
                     <Calendar size={20} className={dates[type] ? 'text-pms-accent' : 'text-pms-text-muted'} />
                   </button>
@@ -257,7 +257,7 @@ const RoomBookingFrontEnd: React.FC<{ onAdminLogin: () => void }> = ({ onAdminLo
                         <div className="p-5 flex justify-between items-start">
                           <div>
                             <h3 className="font-heading text-xl font-bold mb-1">{lang === 'zh' ? room.name_zh : room.name_en}</h3>
-                            <p className="text-[10px] font-bold flex items-center gap-1 opacity-70"><Users size={11} /> {room.standard_capacity} {t('standard')}</p>
+                            <p className="text-[10px] font-bold flex items-center gap-1 opacity-90"><Users size={11} /> {room.standard_capacity} {t('standard')}</p>
                           </div>
                           <PriceDisplay roomId={room.id} date={dates.checkIn} className="text-sm font-bold" />
                         </div>
@@ -267,9 +267,9 @@ const RoomBookingFrontEnd: React.FC<{ onAdminLogin: () => void }> = ({ onAdminLo
                           <div className="flex justify-between items-center">
                             <div><p className="text-[10px] font-bold text-pms-text-muted uppercase mb-1">{t('extra')}</p><p className="text-xs font-bold text-pms-text">+NT$ {room.extra_guest_fee} / 人</p></div>
                             <div className="flex items-center gap-4 bg-pms-bg p-2 rounded-pms border border-pms-border-light">
-                              <button onClick={() => setExtraGuests(Math.max(0, extraGuests - 1))} className="p-1"><Minus size={18} /></button>
+                              <button aria-label="減少人數" onClick={() => setExtraGuests(Math.max(0, extraGuests - 1))} className="p-1"><Minus size={18} /></button>
                               <span className="text-lg font-bold w-5 text-center">{extraGuests}</span>
-                              <button onClick={() => setExtraGuests(Math.min(room.max_capacity - room.standard_capacity, extraGuests + 1))} className="p-1"><Plus size={18} /></button>
+                              <button aria-label="增加人數" onClick={() => setExtraGuests(Math.min(room.max_capacity - room.standard_capacity, extraGuests + 1))} className="p-1"><Plus size={18} /></button>
                             </div>
                           </div>
                           <div className="pt-4 border-t border-pms-border-light flex justify-between items-center">
