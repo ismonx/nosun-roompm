@@ -171,7 +171,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ activeTab, setActiveTab, we
               })}
               {rooms.map(room => (
                 <React.Fragment key={room.id}>
-                  <div className="p-3 bg-pms-bg border-b border-r border-pms-border-light text-[11px] font-bold text-pms-text truncate sticky-col flex items-center">
+                  <div className="p-2 bg-pms-bg border-b border-r border-pms-border-light text-[10px] sm:text-[11px] font-bold text-pms-text sticky-col flex items-center leading-tight">
                     {lang === 'zh' ? room.name_zh : room.name_en}
                   </div>
                   {weekDays.map(d => (

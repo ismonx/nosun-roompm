@@ -18,6 +18,13 @@
   --pms-gap: 0.5rem;
   --pms-padding: 0.75rem;
   --pms-cell-h: 3.5rem;
+  --pms-room-col-w: 120px;
+}
+
+@media (max-width: 640px) {
+  :root {
+    --pms-room-col-w: 75px;
+  }
 }
 
 /* ===== 全域過渡動畫 (500ms 天色漸變) ===== */
@@ -112,9 +119,9 @@ h1, h2, h3, h4 {
   width: 100%;
 }
 
-/* 預設 8 欄 (120px + 7*1fr) */
+/* 預設 8 欄 (可變房型寬度 + 7*1fr) */
 .calendar-grid-desktop {
-  grid-template-columns: 120px repeat(7, 1fr);
+  grid-template-columns: var(--pms-room-col-w) repeat(7, 1fr);
 }
 
 /* 手機版 5 欄 (80px + 4*1fr) */
