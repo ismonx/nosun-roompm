@@ -158,7 +158,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ activeTab, setActiveTab, we
 
           <div className="border border-pms-border rounded-pms overflow-hidden overflow-x-auto">
             {/* Desktop View (Visible on sm+) */}
-            <div className="hidden sm:grid calendar-grid-desktop min-w-[800px]">
+            <div className="hidden sm:grid calendar-grid-desktop min-w-[800px] gap-y-[5px]">
               <div className="p-3 bg-pms-bg-card border-b border-r border-pms-border-light text-[10px] font-bold text-pms-accent uppercase tracking-wider sticky-col">Rooms</div>
               {weekDays.map(d => {
                 const date = new Date(d + 'T00:00:00');
@@ -173,11 +173,11 @@ const CalendarView: React.FC<CalendarViewProps> = ({ activeTab, setActiveTab, we
               })}
               {rooms.map(room => (
                 <React.Fragment key={room.id}>
-                  <div className="p-3 bg-pms-bg border-b border-r border-pms-border-light text-[11px] font-bold text-pms-text truncate sticky-col mb-[5px]">
+                  <div className="p-3 bg-pms-bg border-b border-r border-pms-border-light text-[11px] font-bold text-pms-text truncate sticky-col">
                     {lang === 'zh' ? room.name_zh : room.name_en}
                   </div>
                   {weekDays.map(d => (
-                    <div key={`${d}_${room.id}`} className={`p-1 border-b border-r border-pms-border-light mb-[5px] ${wholeHouseDates[d] ? 'bg-indigo-50/30 dark:bg-indigo-900/10' : ''}`}>
+                    <div key={`${d}_${room.id}`} className={`p-1 border-b border-r border-pms-border-light ${wholeHouseDates[d] ? 'bg-indigo-50/30 dark:bg-indigo-900/10' : ''}`}>
                       <WeekCell date={d} room={room} booking={bookings[`${d}_${room.id}`]} onClick={onSelectCell} isToday={d === today} isPast={d < today} />
                     </div>
                   ))}
@@ -202,17 +202,17 @@ const CalendarView: React.FC<CalendarViewProps> = ({ activeTab, setActiveTab, we
                   ))}
 
                   {/* Row 2: Days 4-6 */}
-                  <div className="p-2 bg-pms-accent/5 border-b border-r border-pms-border-light text-[10px] font-bold text-pms-accent sticky-col flex flex-col justify-center">
+                  <div className="p-2 bg-pms-accent/5 border-b border-r border-pms-border-light text-[10px] font-bold text-pms-accent sticky-col flex flex-col justify-center mb-[5px]">
                     <span className="truncate opacity-40">{lang === 'zh' ? room.name_zh : room.name_en}</span>
                     <span className="text-[8px] opacity-60">2/2</span>
                   </div>
                   {weekDays.slice(4, 7).map(d => (
-                    <div key={`${d}_${room.id}_2`} className={`p-1 border-b border-r border-pms-border-light ${wholeHouseDates[d] ? 'bg-indigo-50/30' : ''}`}>
+                    <div key={`${d}_${room.id}_2`} className={`p-1 border-b border-r border-pms-border-light mb-[5px] ${wholeHouseDates[d] ? 'bg-indigo-50/30' : ''}`}>
                       <div className="text-[8px] font-bold mb-1 opacity-50">{d.split('-').slice(2)}</div>
                       <WeekCell date={d} room={room} booking={bookings[`${d}_${room.id}`]} onClick={onSelectCell} isToday={d === today} isPast={d < today} />
                     </div>
                   ))}
-                  <div className="bg-pms-bg-card/50 border-b border-pms-border-light" /> {/* Empty padding cell */}
+                  <div className="bg-pms-bg-card/50 border-b border-pms-border-light mb-[5px]" /> {/* Empty padding cell */}
                 </React.Fragment>
               ))}
             </div>

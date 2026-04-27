@@ -68,6 +68,8 @@ export interface AppSettings {
   line_oa_id: string;
   admin_password: string;
   login_title: string;
+  step1_text_zh: string;
+  step1_text_en: string;
 }
 
 export type ThemeId = 'forest' | 'surf' | 'sunset';

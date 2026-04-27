@@ -35,7 +35,7 @@ const SettingsManager: React.FC<SettingsManagerProps> = ({ onConfirmDelete }) =>
       {/* 文案設定 */}
       <div className="bg-pms-bg-card border border-pms-border-light rounded-pms p-5 space-y-4 shadow-sm">
         <h3 className="font-bold text-sm text-pms-accent">首頁文案</h3>
-        {(['home_title_zh', 'home_title_en', 'home_subtitle_zh', 'home_subtitle_en', 'hostel_name', 'hostel_name_en', 'login_title'] as const).map(key => (
+        {(['home_title_zh', 'home_title_en', 'home_subtitle_zh', 'home_subtitle_en', 'hostel_name', 'hostel_name_en', 'login_title', 'step1_text_zh', 'step1_text_en'] as const).map(key => (
           <div key={key} className="space-y-1">
             <label className="text-[10px] font-bold text-pms-text-muted uppercase tracking-wider">{key.replace(/_/g, ' ')}</label>
             <input

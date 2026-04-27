@@ -184,7 +184,9 @@ const RoomBookingFrontEnd: React.FC<{ onAdminLogin: () => void }> = ({ onAdminLo
               {settings.hostel_name || '防曬不要擦太多民宿'}
               <span className="block text-[10px] opacity-80 font-medium tracking-normal mt-0.5">{settings.hostel_name_en}</span>
             </h1>
-            <p className="text-[8px] font-bold text-pms-text-muted uppercase tracking-[0.2em]">{t(`step${step}`)}</p>
+            <p className="text-[8px] font-bold text-pms-text-muted uppercase tracking-[0.2em]">
+              {step === 1 ? (settings[`step1_text_${lang as 'zh'|'en'}`] || t('step1')) : t(`step${step}`)}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-2">

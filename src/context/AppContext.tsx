@@ -56,6 +56,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   line_oa_id: '@nosun_happy',
   admin_password: '2026',
   login_title: 'fUX Center',
+  step1_text_zh: '選擇日期',
+  step1_text_en: 'SELECT DATE',
 };
 
 const DEFAULT_ROOMS: Room[] = [
