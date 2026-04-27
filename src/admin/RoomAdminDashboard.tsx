@@ -32,7 +32,15 @@ const RoomAdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =>
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<'week' | 'month' | 'rooms' | 'pricing' | 'settings'>('week');
+  const [activeTab, setActiveTab] = useState<'week' | 'month' | 'rooms' | 'pricing' | 'settings'>('month');
+  const [isPending, startTransition] = React.useTransition();
+
+  const handleTabChange = (tab: any) => {
+    startTransition(() => {
+      setActiveTab(tab);
+    });
+  };
+
   const [weekStart, setWeekStart] = useState(() => {
     const now = new Date();
     const day = now.getDay();
@@ -86,7 +94,7 @@ const RoomAdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =>
         <div className="flex items-center gap-3"><h1 className="font-heading text-sm font-bold text-pms-accent tracking-tight">FU·PMS</h1><span className="text-[8px] font-bold text-pms-text-muted">V6.0</span></div>
         <nav className="flex items-center gap-1">
           {tabs.map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id as any)} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-pms text-[11px] font-bold transition-all ${activeTab === tab.id ? 'bg-pms-accent text-white shadow-sm' : 'text-pms-text-muted hover:bg-pms-accent/10 hover:text-pms-text'}`}>
+            <button key={tab.id} onClick={() => handleTabChange(tab.id as any)} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-pms text-[11px] font-bold transition-all ${activeTab === tab.id ? 'bg-pms-accent text-white shadow-sm' : 'text-pms-text-muted hover:bg-pms-accent/10 hover:text-pms-text'}`}>
               {tab.icon} <span className="hidden sm:inline">{tab.label}</span>
             </button>
           ))}
@@ -104,8 +112,8 @@ const RoomAdminDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) =>
         </div>
       </header>
 
-      <main className="flex-1 overflow-auto p-3 md:p-5">
-        {(activeTab === 'week' || activeTab === 'month') && <CalendarView activeTab={activeTab} setActiveTab={setActiveTab} weekStart={weekStart} setWeekStart={setWeekStart} monthDate={monthDate} setMonthDate={setMonthDate} onSelectCell={(date, roomId) => setSelectedCell({ date, roomId })} />}
+      <main className={`flex-1 overflow-auto p-3 md:p-5 transition-opacity duration-200 ${isPending ? 'opacity-50' : 'opacity-100'}`}>
+        {(activeTab === 'week' || activeTab === 'month') && <CalendarView activeTab={activeTab} setActiveTab={handleTabChange} weekStart={weekStart} setWeekStart={setWeekStart} monthDate={monthDate} setMonthDate={setMonthDate} onSelectCell={(date, roomId) => setSelectedCell({ date, roomId })} />}
         {activeTab === 'rooms' && <RoomManager onConfirmDelete={(msg, conf) => setConfirmDelete({ message: msg, onConfirm: conf })} />}
         {activeTab === 'pricing' && <PricingManager onConfirmDelete={(msg, conf) => setConfirmDelete({ message: msg, onConfirm: conf })} />}
         {activeTab === 'settings' && <SettingsManager onConfirmDelete={(msg, conf) => setConfirmDelete({ message: msg, onConfirm: conf })} />}
