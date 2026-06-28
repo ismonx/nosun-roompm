@@ -81,4 +81,4 @@ pnpm build      # 執行生產環境建置 (包含 TS 檢查)
 
 ---
 
-© 2026 防曬不要擦太多民宿 · 營運架構師 TEO (Advanced AI Partner)
+© 2026 nosunnohappy 
